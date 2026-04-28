@@ -110,11 +110,17 @@
                 <h2>
                     {% set resolved = emergencies | selectattr('status', 'equalto', 'resolved') | list %}
                     {% if resolved | length > 0 %}
-                        {{ (resolved | sum(attribute='response_time_seconds') / (resolved | length)) | round(1) }}s
+                        {% set avg_sec = (resolved | sum(attribute='response_time_seconds') / (resolved | length)) %}
+                        {{ "%02d:%02d:%02d" | format((avg_sec // 3600) | int, ((avg_sec % 3600) // 60) | int, (avg_sec % 60) | int) }}
                     {% else %}N/A{% endif %}
                 </h2>
                 <p>Avg Response</p>
             </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:1rem;">
+            <button onclick="window.location.href='/api/export-report'" class="btn-pro" style="background:#1e293b;color:white;">
+                <i class="fas fa-file-pdf"></i> Download PDF Report
+            </button>
         </div>
 
         <!-- Charts in one card -->

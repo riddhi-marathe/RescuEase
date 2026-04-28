@@ -31,6 +31,8 @@
         .res-status.available { background: #ecfdf5; color: #047857; }
         .res-status.in-use { background: #fffbeb; color: #b45309; }
         .res-status.depleted { background: #fef2f2; color: #dc2626; }
+        .res-status.onsite { background: #e0f2fe; color: #0369a1; }
+        .res-status.busy { background: #f3e8ff; color: #7c3aed; }
         .res-actions { display: flex; gap: 0.5rem; justify-content: center; }
         .res-btn {
             padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
@@ -55,13 +57,49 @@
     </header>
 
     <div class="container page-entrance" style="padding-top: 100px;">
-        <h1 style="font-size: 1.6rem; margin-bottom: 0.25rem;"><i class="fas fa-boxes" style="color:#f59e0b;"></i> Resources</h1>
-        <p style="color: #64748b; margin-bottom: 1.5rem;">Emergency equipment and supplies status.</p>
+        <h1 style="font-size: 1.6rem; margin-bottom: 0.25rem;"><i class="fas fa-boxes" style="color:#f59e0b;"></i> Resources &amp; Staff</h1>
+        <p style="color: #64748b; margin-bottom: 1.5rem;">Emergency equipment and staff availability status.</p>
 
+        <!-- Staff Tracking Section -->
+        <div class="section-header" style="margin: 2rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid rgba(255,255,255,0.1);">
+            <h2 style="color: white; font-size: 1.2rem;"><i class="fas fa-users"></i> Staff Tracking</h2>
+        </div>
+        <div class="res-grid" id="staff-grid">
+            {% for staff in staff_list %}
+            <div class="res-card" data-username="{{ staff.username }}">
+                <div class="res-icon
+                    {% if staff.staff_status == 'available' %}ok
+                    {% elif staff.staff_status == 'on-site' %}warn
+                    {% elif staff.staff_status == 'busy' %}crit
+                    {% else %}ok{% endif %}">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h4>{{ staff.name }}</h4>
+                <p class="res-meta">{{ staff.role | title }} &bull; {{ staff.username }}</p>
+                <span id="staff-status-{{ staff.username }}" class="res-status {{ staff.staff_status | replace('-', '') }}">{{ staff.staff_status | upper }}</span>
+                <div class="res-actions">
+                    <button onclick="updateStaffStatus('{{ staff.username }}', 'available')" class="res-btn avail">Avail</button>
+                    <button onclick="updateStaffStatus('{{ staff.username }}', 'on-site')" class="res-btn use">On-Site</button>
+                    <button onclick="updateStaffStatus('{{ staff.username }}', 'busy')" class="res-btn depl">Busy</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if not staff_list %}
+        <p style="text-align: center; color: #64748b; padding: 2rem;"><i class="fas fa-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i> No staff configured.</p>
+        {% endif %}
+
+        <!-- Resources Section -->
+        <div class="section-header" style="margin: 3rem 0 1rem 0; padding-bottom: 0.75rem; border-bottom: 2px solid rgba(255,255,255,0.1);">
+            <h2 style="color: white; font-size: 1.2rem;"><i class="fas fa-boxes"></i> Equipment</h2>
+        </div>
         <div class="res-grid">
             {% for resource in resources %}
             <div class="res-card">
-                <div class="res-icon {% if resource.status == 'available' %}ok{% elif resource.status == 'in-use' %}warn{% else %}crit{% endif %}">
+                <div class="res-icon
+                    {% if resource.status == 'available' %}ok
+                    {% elif resource.status == 'in-use' %}warn
+                    {% else %}crit{% endif %}">
                     <i class="fas fa-{% if resource.resource_type == 'first_aid' %}first-aid{% elif resource.resource_type == 'fire_extinguisher' %}fire-extinguisher{% elif resource.resource_type == 'oxygen' %}wind{% else %}heartbeat{% endif %}"></i>
                 </div>
                 <h4>{{ resource.resource_name }}</h4>
@@ -80,6 +118,7 @@
         {% endif %}
     </div>
 
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script>
         function updateResource(id, status) {
             fetch('/api/resources/' + id + '/update', {
@@ -89,7 +128,30 @@
             .then(r => r.json())
             .then(data => { location.reload(); });
         }
+
+        function updateStaffStatus(username, status) {
+            fetch('/api/staff/' + username + '/status', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({status: status})
+            })
+            .then(r => r.json())
+            .then(data => {
+                const badge = document.getElementById('staff-status-' + username);
+                if (badge) {
+                    badge.textContent = status.toUpperCase();
+                    badge.className = 'res-status ' + status.replace('-', '');
+                }
+            });
+        }
+
+        const socket = io();
+        socket.on('staff_status_update', function(data) {
+            const badge = document.getElementById('staff-status-' + data.username);
+            if (badge) {
+                badge.textContent = data.status.toUpperCase();
+                badge.className = 'res-status ' + data.status.replace('-', '');
+            }
+        });
     </script>
 </body>
 </html>
-

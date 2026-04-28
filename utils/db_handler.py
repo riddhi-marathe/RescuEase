@@ -23,6 +23,13 @@ def get_db_context():
     finally:
         db.close()
 
+def _add_column_if_missing(db, table, column, col_def):
+    """Add a column to a table if it doesn't already exist."""
+    cursor = db.execute(f"PRAGMA table_info({table})")
+    columns = [row[1] for row in cursor.fetchall()]
+    if column not in columns:
+        db.execute(f'ALTER TABLE {table} ADD COLUMN {column} {col_def}')
+
 def init_db():
     with get_db_context() as db:
         # Main emergencies table
@@ -101,7 +108,8 @@ def init_db():
             phone TEXT DEFAULT NULL,
             email TEXT DEFAULT NULL,
             escalation_level INTEGER DEFAULT 1,
-            is_active INTEGER DEFAULT 1
+            is_active INTEGER DEFAULT 1,
+            staff_status TEXT DEFAULT 'available'
         )''')
 
         # Offline queue for PWA
@@ -137,6 +145,18 @@ def init_db():
             approved_by TEXT DEFAULT NULL,
             approved_at DATETIME DEFAULT NULL
         )''')
+
+        # Migrate missing columns for existing databases
+        _add_column_if_missing(db, 'staff', 'staff_status', "TEXT DEFAULT 'available'")
+        _add_column_if_missing(db, 'emergencies', 'status_history', "TEXT DEFAULT '[]'")
+        _add_column_if_missing(db, 'emergencies', 'emergency_type', "TEXT DEFAULT 'medical'")
+        _add_column_if_missing(db, 'emergencies', 'room_number', "TEXT DEFAULT NULL")
+        _add_column_if_missing(db, 'emergencies', 'floor_number', "INTEGER DEFAULT 1")
+        _add_column_if_missing(db, 'emergencies', 'assigned_staff', "TEXT DEFAULT NULL")
+        _add_column_if_missing(db, 'emergencies', 'escalation_level', "INTEGER DEFAULT 1")
+        _add_column_if_missing(db, 'emergencies', 'acknowledged_at', "DATETIME DEFAULT NULL")
+        _add_column_if_missing(db, 'emergencies', 'resolved_at', "DATETIME DEFAULT NULL")
+        _add_column_if_missing(db, 'emergencies', 'response_time_seconds', "INTEGER DEFAULT NULL")
 
         # Insert default staff
         db.execute('''INSERT OR IGNORE INTO staff (username, password, name, role, escalation_level)

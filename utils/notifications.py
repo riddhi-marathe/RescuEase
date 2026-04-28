@@ -16,6 +16,20 @@ def send_alert(name, location, emergency_id):
     
     print(f"🚨 Alerts sent for emergency {emergency_id}: {name} at {location}")
 
+def send_manager_escalation(emergency_id, name, location, level=2):
+    """Send escalation SMS to managers when pending too long."""
+    try:
+        from config import EMERGENCY_MANAGER_PHONE
+        manager_phone = getattr(__import__('config'), 'EMERGENCY_MANAGER_PHONE', '+1234567890')
+        url = f"https://api.twilio.com/2010-04-01/Accounts/{TWILIO_SID}/Messages.json"
+        body = f"🚨 ESCALATION LEVEL {level}: Emergency #{emergency_id} at {location} for {name} has been pending for 60+ seconds. Respond immediately!"
+        data = {'To': manager_phone, 'From': TWILIO_PHONE, 'Body': body}
+        auth = (TWILIO_SID, TWILIO_TOKEN)
+        response = requests.post(url, data=data, auth=auth)
+        print(f"Manager escalation SMS sent: {response.status_code}")
+    except Exception as e:
+        print(f"Manager escalation failed: {e}")
+
 def send_email_alert(name, location, emergency_id):
     """Send email notification."""
     try:

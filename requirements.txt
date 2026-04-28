@@ -3,3 +3,4 @@ Flask-SocketIO==5.3.6
 python-socketio==5.9.0
 requests
 python-dotenv
+reportlab==4.0.7

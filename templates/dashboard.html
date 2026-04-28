@@ -6,34 +6,84 @@
     <title>RescuEase Dashboard</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
-<body>
-    <header>
+<body class="dark-page">
+    <!-- Notification Toast Container -->
+    <div id="toast-container"></div>
+
+    <!-- Siren Audio -->
+    <audio id="siren-sound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Broadcast Modal -->
+    <div id="broadcast-modal" class="modal-overlay">
+        <div class="modal-box">
+            <h3><i class="fas fa-bullhorn"></i> Broadcast to All Guests</h3>
+            <textarea id="broadcast-message" placeholder="Enter safety message for all guests..."></textarea>
+            <div class="modal-actions">
+                <button class="btn btn-secondary" onclick="closeBroadcast()">Cancel</button>
+                <button class="btn btn-primary" onclick="sendBroadcast()" style="background: linear-gradient(135deg,#ef4444,#f97316); color: white;">
+                    <i class="fas fa-paper-plane"></i> Send Broadcast
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <header class="topbar">
         <nav class="container">
-            <a href="/" class="logo"><i class="fas fa-shield-alt"></i> RescuEase Crisis Suite</a>
+            <a href="/dashboard" class="logo"><i class="fas fa-shield-alt"></i> RescuEase</a>
             <div class="nav-actions">
+                <a href="/camera-feeds" class="btn btn-secondary"><i class="fas fa-video"></i> Cameras</a>
                 <a href="/incident-log" class="btn btn-secondary"><i class="fas fa-chart-bar"></i> Analytics</a>
                 <a href="/resources" class="btn btn-secondary"><i class="fas fa-boxes"></i> Resources</a>
                 <a href="/contacts" class="btn btn-secondary"><i class="fas fa-phone"></i> Contacts</a>
-                <a href="/staff/profile" class="btn btn-secondary"><i class="fas fa-user"></i> Profile</a>
+                <button id="theme-toggle" class="theme-toggle" title="Toggle Dark/Light Mode">
+                    <i class="fas fa-moon"></i>
+                </button>
                 <a href="/logout" class="btn btn-secondary"><i class="fas fa-sign-out-alt"></i> Logout</a>
             </div>
         </nav>
     </header>
 
-    <div class="container dashboard-container page-entrance">
-        <!-- Hero Image Banner -->
-        <div class="page-hero" style="background: linear-gradient(rgba(7,17,31,0.7), rgba(7,17,31,0.8)), url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1400&h=300&fit=crop'); background-size: cover; background-position: center; border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+    <!-- Activity Feed Sidebar -->
+    <button id="activity-toggle" class="activity-toggle" onclick="toggleActivitySidebar()">
+        <i class="fas fa-bell"></i>
+    </button>
+    <div id="activity-sidebar" class="activity-sidebar">
+        <div class="activity-header">
+            <h3><i class="fas fa-stream"></i> Activity Feed</h3>
+            <span style="font-size:0.75rem;color:#64748b;">Live</span>
+        </div>
+        <div id="activity-list" class="activity-list">
+            {% for activity in activities %}
+            <div class="activity-item {{ activity.event_type }}">
+                <div>{{ activity.event_type | upper }}: {{ activity.data or 'System event' }}</div>
+                <div class="activity-time">{{ activity.timestamp }}</div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div id="main-content" class="container dashboard-container main-with-sidebar page-entrance">
+        <!-- Dashboard Header Bar -->
+        <div class="dashboard-header-bar animate-up">
             <div>
-                <h1 style="color: white; font-size: 1.8rem; margin-bottom: 0.25rem;"><i class="fas fa-tachometer-alt"></i> Operations Dashboard</h1>
-                <p style="color: #94a3b8; font-size: 0.95rem;">Real-time crisis monitoring</p>
+                <h1><i class="fas fa-tachometer-alt"></i> Crisis Dashboard</h1>
+                <p class="dashboard-subtitle">Real-time emergency monitoring & response coordination</p>
             </div>
             <div class="dashboard-meta">
                 <span class="live-indicator"><i class="fas fa-circle"></i> LIVE</span>
+                <button onclick="exportPDF()" class="btn-pro" style="background:#1e293b;color:white;">
+                    <i class="fas fa-file-pdf"></i> Export Report
+                </button>
             </div>
         </div>
 
-        <div class="kpi-grid">
+        <!-- KPI Cards -->
+        <div class="kpi-grid animate-up delay-1">
             <div class="kpi-card kpi-total">
                 <div class="kpi-icon"><i class="fas fa-clipboard-list"></i></div>
                 <div class="kpi-body">
@@ -58,89 +108,112 @@
             <div class="kpi-card kpi-response">
                 <div class="kpi-icon"><i class="fas fa-stopwatch"></i></div>
                 <div class="kpi-body">
-                    <h2>{{ avg_response }}s</h2>
-                    <p>Avg Response</p>
+                    <h2>{{ avg_response }}</h2>
+                    <p>Avg Response Time</p>
                 </div>
             </div>
         </div>
 
-        <!-- Swipe Cards: Quick Actions -->
-        <div class="section-header">
+        <!-- Map + Weather Row -->
+        <div class="dashboard-grid" style="grid-template-columns: 2fr 1fr;">
+            <div class="card animate-up delay-2">
+                <div class="section-header" style="margin-top:0;">
+                    <h2><i class="fas fa-map-marked-alt"></i> Live Incident Map</h2>
+                </div>
+                <div id="incident-map"></div>
+                <div class="map-legend">
+                    <span><span class="legend-dot" style="background:#ef4444;"></span> Critical</span>
+                    <span><span class="legend-dot" style="background:#f59e0b;"></span> High</span>
+                    <span><span class="legend-dot" style="background:#3b82f6;"></span> Medium</span>
+                    <span><span class="legend-dot" style="background:#10b981;"></span> Exit</span>
+                </div>
+            </div>
+            <div class="animate-up delay-2">
+                <!-- Weather Widget -->
+                <div id="weather-widget" class="weather-widget" style="margin-bottom:1.5rem;">
+                    <div class="weather-icon"><i class="fas fa-cloud-sun"></i></div>
+                    <div class="weather-info">
+                        <h4 id="weather-temp">--°C</h4>
+                        <p id="weather-condition">Loading...</p>
+                        <div class="weather-meta">
+                            <span><i class="fas fa-tint"></i> <span id="weather-humidity">--%</span></span>
+                            <span><i class="fas fa-wind"></i> <span id="weather-wind">-- km/h</span></span>
+                        </div>
+                    </div>
+                </div>
+                <!-- AI Threat Card -->
+                <div class="card ai-card">
+                    <div class="ai-card-header">
+                        <div class="ai-icon"><i class="fas fa-brain"></i></div>
+                        <div>
+                            <h3>AI Threat Detection</h3>
+                            <p>Monitoring 4 camera zones</p>
+                        </div>
+                    </div>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <span class="detection-badge smoke"><i class="fas fa-smoke"></i> Smoke: 1</span>
+                        <span class="detection-badge none"><i class="fas fa-check"></i> Fire: 0</span>
+                    </div>
+                    <a href="/camera-feeds" style="display:block;margin-top:1rem;color:#38bdf8;font-size:0.85rem;font-weight:600;text-decoration:none;">
+                        <i class="fas fa-arrow-right"></i> Open Live Camera Feeds
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section-header animate-up delay-3">
             <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
         </div>
-        <p class="swipe-hint"><i class="fas fa-hand-pointer"></i> Swipe <i class="fas fa-arrow-right"></i></p>
-        <div class="swipe-container">
-            <a href="/contacts" class="swipe-card-dark" style="text-decoration: none; color: inherit;">
-                <div style="padding: 1.5rem;">
-                    <div style="width: 48px; height: 48px; background: rgba(239,68,68,0.15); color: #ef4444; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 1rem;">
-                        <i class="fas fa-phone-alt"></i>
-                    </div>
-                    <h3 style="color: #f1f5f9; font-size: 1.1rem; margin-bottom: 0.5rem;">Emergency Contacts</h3>
-                    <p style="color: #94a3b8; font-size: 0.9rem;">One-click dial to hospital, fire, police, and ambulance services.</p>
-                </div>
-            </a>
-            <a href="/incident-log" class="swipe-card-dark" style="text-decoration: none; color: inherit;">
-                <div style="padding: 1.5rem;">
-                    <div style="width: 48px; height: 48px; background: rgba(56,189,248,0.15); color: #38bdf8; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 1rem;">
-                        <i class="fas fa-chart-bar"></i>
-                    </div>
-                    <h3 style="color: #f1f5f9; font-size: 1.1rem; margin-bottom: 0.5rem;">Incident Analytics</h3>
-                    <p style="color: #94a3b8; font-size: 0.9rem;">View charts, trends, and historical incident data reports.</p>
-                </div>
-            </a>
-            <a href="/resources" class="swipe-card-dark" style="text-decoration: none; color: inherit;">
-                <div style="padding: 1.5rem;">
-                    <div style="width: 48px; height: 48px; background: rgba(52,211,153,0.15); color: #34d399; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 1rem;">
-                        <i class="fas fa-boxes"></i>
-                    </div>
-                    <h3 style="color: #f1f5f9; font-size: 1.1rem; margin-bottom: 0.5rem;">Resource Inventory</h3>
-                    <p style="color: #94a3b8; font-size: 0.9rem;">Check availability of first-aid, fire extinguishers, and AEDs.</p>
-                </div>
-            </a>
-            <a href="/admin/approvals" class="swipe-card-dark" style="text-decoration: none; color: inherit;">
-                <div style="padding: 1.5rem;">
-                    <div style="width: 48px; height: 48px; background: rgba(167,139,250,0.15); color: #a78bfa; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 1rem;">
-                        <i class="fas fa-user-check"></i>
-                    </div>
-                    <h3 style="color: #f1f5f9; font-size: 1.1rem; margin-bottom: 0.5rem;">Guest Approvals</h3>
-                    <p style="color: #94a3b8; font-size: 0.9rem;">Review and approve pending guest access requests.</p>
-                </div>
-            </a>
-        </div>
-
-        <!-- AI Threat Detection -->
-        <div class="card ai-card">
-            <div class="ai-card-header">
-                <div class="ai-icon"><i class="fas fa-robot"></i></div>
-                <div>
-                    <h3>AI Threat Detection</h3>
-                    <p>Automated surveillance scan for smoke, fire, flood, earthquake, and intruders</p>
+        <div class="swipe-container animate-up delay-3">
+            <div class="swipe-card-dark" onclick="triggerSimulatedAlert()" style="cursor:pointer;">
+                <div style="padding:1.5rem;">
+                    <i class="fas fa-radiation" style="font-size:2rem;color:#ef4444;margin-bottom:0.75rem;"></i>
+                    <h3 style="color:white;font-size:1.1rem;">Simulate Alert</h3>
+                    <p style="color:#94a3b8;font-size:0.85rem;">Trigger test emergency for demo</p>
                 </div>
             </div>
-            <button onclick="simulateAI()" class="btn btn-primary">
-                <i class="fas fa-brain"></i> Run AI Detection Scan
-            </button>
-            <div id="ai-result" style="margin-top: 1rem;"></div>
+            <div class="swipe-card-dark" onclick="openBroadcast()" style="cursor:pointer;">
+                <div style="padding:1.5rem;">
+                    <i class="fas fa-bullhorn" style="font-size:2rem;color:#f59e0b;margin-bottom:0.75rem;"></i>
+                    <h3 style="color:white;font-size:1.1rem;">Broadcast Guests</h3>
+                    <p style="color:#94a3b8;font-size:0.85rem;">Send safety message to all guests</p>
+                </div>
+            </div>
+            <div class="swipe-card-dark" onclick="location.href='/priority-escalation'" style="cursor:pointer;">
+                <div style="padding:1.5rem;">
+                    <i class="fas fa-arrow-up" style="font-size:2rem;color:#f472b6;margin-bottom:0.75rem;"></i>
+                    <h3 style="color:white;font-size:1.1rem;">Escalation Monitor</h3>
+                    <p style="color:#94a3b8;font-size:0.85rem;">View & manage priority escalations</p>
+                </div>
+            </div>
+            <div class="swipe-card-dark" onclick="location.href='/incident-log'" style="cursor:pointer;">
+                <div style="padding:1.5rem;">
+                    <i class="fas fa-history" style="font-size:2rem;color:#38bdf8;margin-bottom:0.75rem;"></i>
+                    <h3 style="color:white;font-size:1.1rem;">Incident History</h3>
+                    <p style="color:#94a3b8;font-size:0.85rem;">Full analytics & filterable log</p>
+                </div>
+            </div>
         </div>
 
-        <div class="section-header">
-            <h2><i class="fas fa-stream"></i> Live Crisis Monitor</h2>
-            <span class="badge-count">{{ emergencies|length }} active</span>
+        <!-- Active Emergencies -->
+        <div class="section-header animate-up delay-4">
+            <h2><i class="fas fa-ambulance"></i> Active Emergencies</h2>
+            <span class="badge-count">{{ emergencies | length }} Total</span>
         </div>
-
-        <div class="dashboard-grid" id="emergencies-container">
-            {% for emergency in emergencies[:6] %}
-            <div class="emergency-card-pro {{ emergency.status }}" data-emergency-id="{{ emergency.id }}">
+        <div id="emergencies-container" class="swipe-container stagger-children animate-up delay-4">
+            {% for emergency in emergencies %}
+            <div class="emergency-card-pro {{ emergency.status }} {% if emergency.escalation_level == 3 and emergency.status == 'pending' %}blink-critical{% endif %}" data-emergency-id="{{ emergency.id }}">
                 <div class="card-status-bar"></div>
                 <div class="card-body">
                     <div class="card-header-row">
-                        <h3>#{{ emergency.id }} &mdash; {{ emergency.name }}</h3>
+                        <h3>#{{ emergency.id }} - {{ emergency.name }}</h3>
                         <span class="status-pill {{ emergency.status }}">{{ emergency.status | upper }}</span>
                     </div>
                     <div class="info-grid">
                         <div class="info-item">
                             <span class="info-label"><i class="fas fa-tag"></i> Type</span>
-                            <span class="type-badge">{{ emergency.emergency_type | default('medical') | upper }}</span>
+                            <span>{{ emergency.emergency_type | default('medical') | title }}</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label"><i class="fas fa-map-marker-alt"></i> Location</span>
@@ -151,28 +224,42 @@
                             <span>{{ emergency.room_number or 'N/A' }}</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label"><i class="fas fa-clock"></i> Reported</span>
-                            <span>{{ emergency.timestamp }}</span>
+                            <span class="info-label"><i class="fas fa-flag"></i> Priority</span>
+                            <span class="priority-tag priority-{{ emergency.priority }}">
+                                <i class="fas fa-exclamation-circle"></i> {{ emergency.priority | upper }}
+                            </span>
                         </div>
                     </div>
-                    {% if emergency.status != 'resolved' %}
-                    <div class="action-buttons-pro">
-                        <a href="/evacuation/{{ emergency.room_number or '101' }}" class="btn-pro btn-danger"><i class="fas fa-running"></i> Evacuate</a>
-                        <a href="/track/{{ emergency.id }}" class="btn-pro btn-primary"><i class="fas fa-map-marker-alt"></i> Track</a>
-                        <button onclick="acknowledge({{ emergency.id }})" class="btn-pro btn-success"><i class="fas fa-check"></i> Acknowledge</button>
+                    {% if emergency.escalation_level > 1 %}
+                    <div style="margin-bottom:0.75rem;">
+                        <span class="escalation-badge">Escalation L{{ emergency.escalation_level }}</span>
                     </div>
                     {% endif %}
+                    <div class="action-buttons-pro">
+                        {% if emergency.status == 'pending' %}
+                        <button onclick="acknowledgeEmergency({{ emergency.id }})" class="btn-pro btn-success">
+                            <i class="fas fa-check"></i> Acknowledge
+                        </button>
+                        {% endif %}
+                        <a href="/evacuation/{{ emergency.room_number or '101' }}" class="btn-pro btn-danger">
+                            <i class="fas fa-running"></i> Evacuate
+                        </a>
+                        <a href="/track/{{ emergency.id }}" class="btn-pro btn-primary">
+                            <i class="fas fa-map-marker-alt"></i> Track
+                        </a>
+                    </div>
                 </div>
             </div>
             {% endfor %}
         </div>
 
-        <!-- Resource Status -->
-        <div class="section-header">
-            <h2><i class="fas fa-boxes"></i> Resource Status Overview</h2>
+        <!-- Resources Preview -->
+        <div class="section-header animate-up delay-5">
+            <h2><i class="fas fa-boxes"></i> Resource Status</h2>
+            <a href="/resources" style="color:#38bdf8;font-size:0.85rem;font-weight:600;text-decoration:none;">View All <i class="fas fa-arrow-right"></i></a>
         </div>
-        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
-            {% for resource in resources %}
+        <div class="dashboard-grid stagger-children animate-up delay-5" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+            {% for resource in resources[:4] %}
             <div class="resource-card">
                 <div class="resource-icon-wrap {{ resource.status }}">
                     <i class="fas fa-{% if resource.resource_type == 'first_aid' %}first-aid{% elif resource.resource_type == 'fire_extinguisher' %}fire-extinguisher{% elif resource.resource_type == 'oxygen' %}wind{% else %}heartbeat{% endif %}"></i>
@@ -181,39 +268,212 @@
                     <h4>{{ resource.resource_name }}</h4>
                     <p class="resource-meta">Floor {{ resource.floor_number }} &bull; Qty: {{ resource.quantity }}</p>
                     <div class="resource-meter">
-                        <div class="resource-meter-fill {{ resource.status }}" style="width: {% if resource.status == 'available' %}100%{% elif resource.status == 'in-use' %}60%{% else %}20%{% endif %}"></div>
+                        <div class="resource-meter-fill {{ resource.status }}" style="width: {% if resource.status == 'available' %}100%{% elif resource.status == 'in-use' %}60%{% else %}20%{% endif %};"></div>
                     </div>
                     <span class="resource-status-text {{ resource.status }}">{{ resource.status | upper }}</span>
                 </div>
             </div>
             {% endfor %}
         </div>
+
+        <!-- Staff Tracking Preview -->
+        <div class="section-header animate-up delay-6">
+            <h2><i class="fas fa-users"></i> Staff Status</h2>
+            <a href="/resources" style="color:#38bdf8;font-size:0.85rem;font-weight:600;text-decoration:none;">Manage <i class="fas fa-arrow-right"></i></a>
+        </div>
+        <div class="dashboard-grid stagger-children animate-up delay-6" style="grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));">
+            {% for staff in staff_list[:6] %}
+            <div class="card" style="display:flex;align-items:center;gap:1rem;padding:1rem;">
+                <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#0ea5e9,#6366f1);display:flex;align-items:center;justify-content:center;color:white;font-weight:700;font-size:1rem;">
+                    {{ staff.name[0] }}
+                </div>
+                <div>
+                    <h4 style="font-size:0.95rem;color:#1e293b;margin-bottom:0.15rem;">{{ staff.name }}</h4>
+                    <p style="font-size:0.8rem;color:#64748b;margin-bottom:0.25rem;">{{ staff.role | title }}</p>
+                    <span class="status-pill {% if staff.staff_status == 'available' %}resolved{% elif staff.staff_status == 'on-site' %}in-progress{% else %}pending{% endif %}" style="font-size:0.65rem;padding:0.2rem 0.5rem;">
+                        {{ staff.staff_status | upper }}
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
     <script src="{{ url_for('static', filename='js/socket.js') }}"></script>
     <script>
-        function acknowledge(id) {
-            fetch('/api/acknowledge/' + id, {method: 'POST'})
+        // ==================== LEAFLET MAP ====================
+        let map;
+        function initMap() {
+            map = L.map('incident-map').setView([12.97, 77.59], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+            loadMapData();
+        }
+        function loadMapData() {
+            fetch('/api/map-data')
                 .then(r => r.json())
-                .then(data => { showNotification('Emergency acknowledged!'); });
+                .then(data => {
+                    data.incidents.forEach(pin => {
+                        const color = pin.priority === 'critical' ? '#ef4444' : pin.priority === 'high' ? '#f59e0b' : '#3b82f6';
+                        const marker = L.circleMarker([pin.lat, pin.lng], {
+                            radius: 10,
+                            fillColor: color,
+                            color: '#fff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.85
+                        }).addTo(map);
+                        marker.bindPopup(`<b>#${pin.id}</b> ${pin.name}<br>${pin.type} | ${pin.status}`);
+                    });
+                    data.exits.forEach(exit => {
+                        L.circleMarker([exit.lat, exit.lng], {
+                            radius: 6,
+                            fillColor: '#10b981',
+                            color: '#fff',
+                            weight: 2,
+                            opacity: 1,
+                            fillOpacity: 0.9
+                        }).addTo(map).bindPopup(`Exit: ${exit.name}`);
+                    });
+                });
+        }
+        document.addEventListener('DOMContentLoaded', initMap);
+
+        // ==================== WEATHER WIDGET ====================
+        function loadWeather() {
+            fetch('/api/weather')
+                .then(r => r.json())
+                .then(data => {
+                    document.getElementById('weather-temp').textContent = data.temp + '°C';
+                    document.getElementById('weather-condition').textContent = data.condition;
+                    document.getElementById('weather-humidity').textContent = data.humidity + '%';
+                    document.getElementById('weather-wind').textContent = data.wind + ' km/h';
+                    if (data.alert) {
+                        document.getElementById('weather-widget').style.background = 'linear-gradient(135deg, #ef4444, #f97316)';
+                    }
+                });
+        }
+        document.addEventListener('DOMContentLoaded', loadWeather);
+
+        // ==================== ACTIVITY SIDEBAR ====================
+        function toggleActivitySidebar() {
+            const sidebar = document.getElementById('activity-sidebar');
+            const main = document.getElementById('main-content');
+            const toggle = document.getElementById('activity-toggle');
+            sidebar.classList.toggle('collapsed');
+            main.classList.toggle('collapsed');
+            toggle.classList.toggle('collapsed');
         }
 
-        function simulateAI() {
-            fetch('/api/ai-detect', {
+        // ==================== EXPORT PDF ====================
+        function exportPDF() {
+            window.location.href = '/api/export-report';
+        }
+
+        // ==================== BROADCAST ====================
+        function openBroadcast() {
+            document.getElementById('broadcast-modal').classList.add('active');
+        }
+        function closeBroadcast() {
+            document.getElementById('broadcast-modal').classList.remove('active');
+            document.getElementById('broadcast-message').value = '';
+        }
+        function sendBroadcast() {
+            const msg = document.getElementById('broadcast-message').value.trim();
+            if (!msg) return alert('Please enter a message');
+            fetch('/api/broadcast', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({sensor_data: 'camera_zone_a'})
+                body: JSON.stringify({message: msg, type: 'warning'})
             })
             .then(r => r.json())
             .then(data => {
-                const resultDiv = document.getElementById('ai-result');
-                if (data.threat_detected) {
-                    resultDiv.innerHTML = `<div class="alert alert-error"><i class="fas fa-exclamation-triangle"></i> THREAT DETECTED: ${data.type.toUpperCase()} (Confidence: ${Math.round(data.confidence * 100)}%)</div>`;
-                } else {
-                    resultDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check-circle"></i> No threats detected (Confidence: ${Math.round(data.confidence * 100)}%)</div>`;
-                }
+                showNotification('Broadcast sent to all guests!', 'success');
+                closeBroadcast();
             });
+        }
+
+        // ==================== ACKNOWLEDGE ====================
+        function acknowledgeEmergency(id) {
+            fetch('/api/acknowledge/' + id, {method: 'POST'})
+                .then(r => r.json())
+                .then(data => {
+                    showNotification(data.message, 'success');
+                    setTimeout(() => location.reload(), 800);
+                });
+        }
+
+        // ==================== SIMULATED ALERT ====================
+        function triggerSimulatedAlert() {
+            fetch('/panic', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: 'Demo Staff', location: 'Lobby', emergency_type: 'fire'})
+            })
+            .then(r => r.json())
+            .then(data => {
+                showNotification('Test alert triggered: #' + data.id, 'warning');
+            });
+        }
+
+        // ==================== THEME TOGGLE ====================
+        document.getElementById('theme-toggle').addEventListener('click', function() {
+            document.body.classList.toggle('light-mode');
+            const icon = this.querySelector('i');
+            icon.className = document.body.classList.contains('light-mode') ? 'fas fa-sun' : 'fas fa-moon';
+        });
+
+        // ==================== ENHANCED SOCKET LISTENERS ====================
+        const socket = io();
+
+        socket.on('new_emergency', function(data) {
+            // Play siren
+            const siren = document.getElementById('siren-sound');
+            if (siren) { siren.currentTime = 0; siren.play().catch(()=>{}); }
+            showNotification('NEW EMERGENCY #' + data.id + ': ' + data.name, 'error');
+            setTimeout(() => location.reload(), 1500);
+        });
+
+        socket.on('critical_escalation', function(data) {
+            const card = document.querySelector('.emergency-card-pro[data-emergency-id="' + data.id + '"]');
+            if (card) card.classList.add('blink-critical');
+            showNotification(data.message, 'error');
+            const siren = document.getElementById('siren-sound');
+            if (siren) { siren.currentTime = 0; siren.play().catch(()=>{}); }
+        });
+
+        socket.on('activity_feed', function(data) {
+            const list = document.getElementById('activity-list');
+            const item = document.createElement('div');
+            item.className = 'activity-item ' + (data.type || 'update');
+            item.innerHTML = '<div>' + data.message + '</div><div class="activity-time">' + data.time + '</div>';
+            list.insertBefore(item, list.firstChild);
+            if (list.children.length > 50) list.lastChild.remove();
+        });
+
+        socket.on('guest_broadcast', function(data) {
+            showNotification('BROADCAST: ' + data.message, 'warning');
+        });
+
+        socket.on('staff_status_update', function(data) {
+            showNotification('Staff ' + data.username + ' is now ' + data.status, 'success');
+        });
+
+        function showNotification(message, type) {
+            const existing = document.querySelector('.toast-notification');
+            if (existing) existing.remove();
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification ' + (type === 'error' ? 'toast-siren' : '');
+            toast.style.cssText = 'position:fixed;top:100px;right:20px;color:white;padding:1rem 2rem;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,0.3);z-index:10000;animation:slideInRight 0.3s ease;max-width:350px;font-weight:600;';
+            if (type === 'error') toast.style.background = '#ef4444';
+            else if (type === 'warning') toast.style.background = '#f59e0b';
+            else toast.style.background = '#10b981';
+            toast.innerHTML = '<i class="fas fa-' + (type==='error'?'exclamation-circle':type==='warning'?'exclamation-triangle':'check-circle') + '"></i> ' + message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 6000);
         }
     </script>
 </body>

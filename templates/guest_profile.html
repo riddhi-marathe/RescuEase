@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Profile - RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .profile-hero {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .profile-avatar {
+            width: 90px;
+            height: 90px;
+            background: linear-gradient(135deg, #ec4899, #f472b6);
+            border-radius: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2.5rem;
+            box-shadow: 0 12px 30px rgba(236,72,153,0.3);
+            flex-shrink: 0;
+        }
+        .profile-name h1 {
+            font-size: 1.6rem;
+            color: #f1f5f9;
+            margin-bottom: 0.25rem;
+        }
+        .profile-name p {
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+        .profile-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(52,211,153,0.15);
+            color: #34d399;
+            padding: 0.35rem 0.9rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            margin-left: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+        .profile-badge.pending {
+            background: rgba(251,191,36,0.15);
+            color: #fbbf24;
+        }
+        .profile-badge.rejected {
+            background: rgba(239,68,68,0.15);
+            color: #ef4444;
+        }
+        .info-grid-pro {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .info-card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            padding: 1.25rem 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .info-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(255,255,255,0.12);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+        }
+        .info-card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+        .info-card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+        .info-card-icon.blue { background: rgba(56,189,248,0.15); color: #38bdf8; }
+        .info-card-icon.pink { background: rgba(236,72,153,0.15); color: #f472b6; }
+        .info-card-icon.green { background: rgba(52,211,153,0.15); color: #34d399; }
+        .info-card-icon.amber { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .info-card-icon.purple { background: rgba(167,139,250,0.15); color: #a78bfa; }
+        .info-card-icon.red { background: rgba(239,68,68,0.15); color: #ef4444; }
+        .info-card h4 {
+            font-size: 0.8rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            font-weight: 600;
+        }
+        .info-card p {
+            color: #e2e8f0;
+            font-size: 1.05rem;
+            font-weight: 600;
+            margin-top: 0.3rem;
+            word-break: break-word;
+        }
+        .timeline-pro {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-top: 1rem;
+        }
+        .timeline-pro::before {
+            content: '';
+            position: absolute;
+            left: 6px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255,255,255,0.06);
+        }
+        .tl-pro-item {
+            position: relative;
+            margin-bottom: 1.25rem;
+        }
+        .tl-pro-dot {
+            position: absolute;
+            left: -1.5rem;
+            top: 2px;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: #0f172a;
+            border: 3px solid #38bdf8;
+        }
+        .tl-pro-dot.done { border-color: #34d399; }
+        .tl-pro-dot.pending { border-color: #fbbf24; }
+        .tl-pro-content h4 {
+            font-size: 0.95rem;
+            color: #e2e8f0;
+            margin-bottom: 0.15rem;
+        }
+        .tl-pro-content p {
+            font-size: 0.8rem;
+            color: #64748b;
+        }
+        .nav-guest {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/" class="logo"><i class="fas fa-shield-alt"></i> RescuEase</a>
+            <div class="nav-guest">
+                <a href="/guest/dashboard" class="btn btn-secondary"><i class="fas fa-home"></i> Dashboard</a>
+                <a href="/contacts" class="btn btn-secondary"><i class="fas fa-phone"></i> Emergency</a>
+                <a href="/guest/logout" class="btn btn-secondary"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container page-entrance" style="padding-top: 100px;">
+        <!-- Profile Hero -->
+        <div class="profile-hero">
+            <div class="profile-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <div class="profile-name">
+                <h1>
+                    {{ guest.name }}
+                    <span class="profile-badge {{ guest.status }}">
+                        <i class="fas fa-circle" style="font-size:0.5rem;"></i> {{ guest.status | upper }}
+                    </span>
+                </h1>
+                <p><i class="fas fa-door-open"></i> Room {{ guest.room_number or 'N/A' }} &bull; <i class="fas fa-user-tag"></i> {{ guest.username }}</p>
+            </div>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="info-grid-pro">
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon blue"><i class="fas fa-envelope"></i></div>
+                    <h4>Email Address</h4>
+                </div>
+                <p>{{ guest.email or 'Not provided' }}</p>
+            </div>
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon pink"><i class="fas fa-phone"></i></div>
+                    <h4>Phone Number</h4>
+                </div>
+                <p>{{ guest.phone or 'Not provided' }}</p>
+            </div>
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon green"><i class="fas fa-door-open"></i></div>
+                    <h4>Room Number</h4>
+                </div>
+                <p>{{ guest.room_number or 'Not assigned' }}</p>
+            </div>
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon amber"><i class="fas fa-user-tag"></i></div>
+                    <h4>Username</h4>
+                </div>
+                <p>{{ guest.username }}</p>
+            </div>
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon purple"><i class="fas fa-comment"></i></div>
+                    <h4>Access Reason</h4>
+                </div>
+                <p>{{ guest.request_reason or 'Not specified' }}</p>
+            </div>
+            <div class="info-card">
+                <div class="info-card-header">
+                    <div class="info-card-icon red"><i class="fas fa-shield-alt"></i></div>
+                    <h4>Account Status</h4>
+                </div>
+                <p class="status-text {{ guest.status }}">
+                    {{ guest.status | title }}
+                </p>
+            </div>
+        </div>
+
+        <!-- Approval Timeline -->
+        <div class="card" style="background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(255,255,255,0.06);">
+            <h3 style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+                <i class="fas fa-stream"></i> Account Timeline
+            </h3>
+            <div class="timeline-pro">
+                <div class="tl-pro-item">
+                    <div class="tl-pro-dot done"></div>
+                    <div class="tl-pro-content">
+                        <h4>Account Created</h4>
+                        <p><i class="fas fa-clock"></i> {{ guest.requested_at or 'Unknown' }}</p>
+                    </div>
+                </div>
+                {% if guest.status == 'approved' %}
+                <div class="tl-pro-item">
+                    <div class="tl-pro-dot done"></div>
+                    <div class="tl-pro-content">
+                        <h4>Access Approved</h4>
+                        <p><i class="fas fa-clock"></i> {{ guest.approved_at or 'Unknown' }} by {{ guest.approved_by or 'Admin' }}</p>
+                    </div>
+                </div>
+                {% elif guest.status == 'rejected' %}
+                <div class="tl-pro-item">
+                    <div class="tl-pro-dot pending"></div>
+                    <div class="tl-pro-content">
+                        <h4>Access Rejected</h4>
+                        <p><i class="fas fa-clock"></i> {{ guest.approved_at or 'Unknown' }} by {{ guest.approved_by or 'Admin' }}</p>
+                    </div>
+                </div>
+                {% else %}
+                <div class="tl-pro-item">
+                    <div class="tl-pro-dot pending"></div>
+                    <div class="tl-pro-content">
+                        <h4>Awaiting Approval</h4>
+                        <p><i class="fas fa-clock"></i> Pending admin review...</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="section-header" style="margin-top: 2.5rem;">
+            <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+        </div>
+        <div class="action-bar">
+            <a href="/sos" class="action-btn sos"><i class="fas fa-exclamation-triangle"></i> Emergency SOS</a>
+            <a href="/evacuation/{{ guest.room_number or '101' }}" class="action-btn route"><i class="fas fa-running"></i> Evacuation Route</a>
+            <a href="/contacts" class="action-btn contacts"><i class="fas fa-phone-alt"></i> Emergency Contacts</a>
+            <a href="/guest/dashboard" class="action-btn" style="background: rgba(167,139,250,0.15); border-color: rgba(167,139,250,0.2);"><i class="fas fa-home" style="color: #a78bfa;"></i> Dashboard</a>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -11,3 +11,4 @@ EMAIL_PASSWORD = 'your-app-password'
 TWILIO_SID = 'your-twilio-sid'
 TWILIO_TOKEN = 'your-twilio-token'
 TWILIO_PHONE = '+1234567890'
+EMERGENCY_MANAGER_PHONE = os.environ.get('MANAGER_PHONE', '+1234567890')

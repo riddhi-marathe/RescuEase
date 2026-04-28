@@ -1,8 +1,24 @@
-# RescuEase Bug Fix TODO
+# RescuEase: Good → Winner Enhancement Plan
 
-1. ✅ **Create TODO.md** - Plan steps tracked
-2. ✅ **Update utils/db_handler.py** - Import flask.g, remove custom g definition
-3. ✅ **Update app.py** - Add @app.teardown_appcontext(close_db), refactor all DB routes to use `with get_db_context() as conn:`
-4. ✅ **Test application** - Runs without AttributeError; DB operations safe with context managers & teardown
-5. ✅ **Verify SocketIO & notifications** - Real-time broadcasts intact, notifications functional (update config creds for real use)
-6. ✅ **Finalize** - Bug-free backend/DB handling complete
+## Phase 1: Core Infrastructure
+- [x] config.py — Add EMERGENCY_MANAGER_PHONE
+- [x] app.py — Add /camera-feeds route, ensure dashboard data completeness
+- [x] static/css/style.css — Add blink-red, priority tags, activity feed, map, broadcast modal styles
+
+## Phase 2: Dashboard (Critical — Missing File)
+- [x] templates/dashboard.html — Create full professional dashboard with all features
+
+## Phase 3: Supporting Pages
+- [x] templates/camera_feeds.html — Create AI Live Camera Feeds page
+- [x] templates/incident_log.html — Fix response time to HH:MM:SS, add PDF export button
+- [x] templates/resources.html — Add Staff Tracking section (Available/On-site/Busy)
+- [x] templates/priority_escalation.html — Add blinking red for 60s unacknowledged alerts
+
+## Phase 4: Real-time JS
+- [x] static/js/socket.js — Add siren audio, critical blink, activity feed rendering, guest broadcast, staff status updates
+
+## Followup
+- [ ] Test server startup
+- [ ] Test SOS → 60s escalation → blink red + SMS
+- [ ] Test dark/light toggle, PDF export, map, broadcast, camera feeds
+

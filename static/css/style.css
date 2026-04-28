@@ -952,6 +952,11 @@ tr:hover {
 .resource-status-text.in-use { color: #b45309; }
 .resource-status-text.unavailable { color: #dc2626; }
 
+/* Status text colors for profile */
+.status-text.approved { color: #34d399; }
+.status-text.pending { color: #fbbf24; }
+.status-text.rejected { color: #ef4444; }
+
 /* Responsive Dashboard */
 @media (max-width: 768px) {
     .dashboard-header-bar {
@@ -988,6 +993,363 @@ tr:hover {
     gap: 10px;
     align-items: center;
     flex-wrap: wrap;
+}
+
+/* ============================================
+   BLINKING RED CRITICAL ALERT
+   ============================================ */
+@keyframes blink-red {
+    0%, 100% { border-color: #ef4444; box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+    50% { border-color: #ff0000; box-shadow: 0 0 20px 4px rgba(239,68,68,0.6); }
+}
+.blink-critical {
+    animation: blink-red 1s ease-in-out infinite;
+    border: 3px solid #ef4444 !important;
+}
+
+/* ============================================
+   PRIORITY TAGS
+   ============================================ */
+.priority-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+.priority-critical { background: #fef2f2; color: #dc2626; }
+.priority-high { background: #fffbeb; color: #b45309; }
+.priority-medium { background: #eff6ff; color: #2563eb; }
+
+/* ============================================
+   ACTIVITY FEED SIDEBAR
+   ============================================ */
+.activity-sidebar {
+    position: fixed;
+    top: 80px;
+    right: 0;
+    width: 320px;
+    height: calc(100vh - 80px);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(255,255,255,0.06);
+    z-index: 900;
+    display: flex;
+    flex-direction: column;
+    transition: transform 0.3s ease;
+}
+.activity-sidebar.collapsed {
+    transform: translateX(100%);
+}
+.activity-header {
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.activity-header h3 {
+    font-size: 0.95rem;
+    color: #f1f5f9;
+    font-weight: 600;
+}
+.activity-toggle {
+    position: fixed;
+    top: 90px;
+    right: 330px;
+    z-index: 901;
+    background: #0f172a;
+    border: 1px solid rgba(255,255,255,0.1);
+    color: #94a3b8;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+.activity-toggle:hover { color: white; }
+.activity-toggle.collapsed { right: 0; }
+.activity-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.75rem;
+}
+.activity-item {
+    padding: 0.75rem;
+    border-radius: 10px;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+    line-height: 1.4;
+    border-left: 3px solid transparent;
+    background: rgba(255,255,255,0.02);
+    transition: background 0.2s;
+}
+.activity-item:hover { background: rgba(255,255,255,0.04); }
+.activity-item.emergency { border-left-color: #ef4444; }
+.activity-item.escalation { border-left-color: #f59e0b; }
+.activity-item.update { border-left-color: #10b981; }
+.activity-item.acknowledge { border-left-color: #3b82f6; }
+.activity-time {
+    font-size: 0.7rem;
+    color: #64748b;
+    margin-top: 0.25rem;
+}
+
+/* ============================================
+   MAP CONTAINER
+   ============================================ */
+#incident-map {
+    height: 380px;
+    border-radius: 16px;
+    z-index: 1;
+}
+.map-legend {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-top: 0.75rem;
+    font-size: 0.8rem;
+    color: #94a3b8;
+}
+.map-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+.legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+}
+
+/* ============================================
+   BROADCAST MODAL
+   ============================================ */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+    z-index: 11000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+    background: #0f172a;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 480px;
+    box-shadow: 0 25px 60px rgba(0,0,0,0.4);
+}
+.modal-box h3 {
+    color: white;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+}
+.modal-box textarea {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    padding: 12px;
+    color: #e2e8f0;
+    font-family: inherit;
+    resize: vertical;
+    min-height: 100px;
+    margin-bottom: 1rem;
+}
+.modal-box textarea:focus {
+    outline: none;
+    border-color: #38bdf8;
+}
+.modal-actions {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: flex-end;
+}
+
+/* ============================================
+   SIREN TOAST
+   ============================================ */
+.toast-siren {
+    background: linear-gradient(45deg, #dc2626, #ef4444) !important;
+    animation: slideInRight 0.3s ease, pulse-red 1s ease-in-out infinite;
+}
+@keyframes pulse-red {
+    0%, 100% { box-shadow: 0 10px 30px rgba(220,38,38,0.4); }
+    50% { box-shadow: 0 10px 40px rgba(220,38,38,0.7); }
+}
+
+/* ============================================
+   WEATHER WIDGET
+   ============================================ */
+.weather-widget {
+    background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+    border-radius: 16px;
+    padding: 1.25rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+.weather-icon { font-size: 2.5rem; }
+.weather-info h4 { font-size: 1.8rem; font-weight: 700; }
+.weather-info p { font-size: 0.85rem; opacity: 0.9; }
+.weather-meta {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    font-size: 0.75rem;
+    opacity: 0.8;
+}
+
+/* ============================================
+   CAMERA FEEDS
+   ============================================ */
+.camera-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+.camera-card {
+    background: rgba(255,255,255,0.97);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+}
+.camera-feed {
+    height: 200px;
+    background: #0f172a;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.camera-feed img {
+    width: 100%; height: 100%; object-fit: cover;
+}
+.camera-overlay {
+    position: absolute;
+    top: 0.75rem; left: 0.75rem;
+    background: rgba(0,0,0,0.6);
+    color: white;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.camera-overlay.online { color: #34d399; }
+.camera-overlay.offline { color: #ef4444; }
+.camera-body {
+    padding: 1rem 1.25rem;
+}
+.camera-body h4 {
+    font-size: 1rem;
+    color: #1e293b;
+    margin-bottom: 0.25rem;
+}
+.camera-body p {
+    font-size: 0.85rem;
+    color: #64748b;
+}
+.detection-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.5rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+.detection-badge.smoke { background: #fef3c7; color: #92400e; }
+.detection-badge.fire { background: #fef2f2; color: #dc2626; }
+.detection-badge.none { background: #ecfdf5; color: #047857; }
+
+/* ============================================
+   DARK/LIGHT MODE TOGGLE
+   ============================================ */
+.theme-toggle {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.15);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+.theme-toggle:hover { background: rgba(255,255,255,0.2); }
+
+/* Light mode overrides */
+body.light-mode {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+body.light-mode .card,
+body.light-mode .emergency-card-pro,
+body.light-mode .resource-card,
+body.light-mode .res-card,
+body.light-mode .camera-card {
+    background: white;
+    color: #1e293b;
+}
+body.light-mode .activity-sidebar {
+    background: rgba(255,255,255,0.95);
+    border-left-color: rgba(0,0,0,0.06);
+}
+body.light-mode .activity-item {
+    background: rgba(0,0,0,0.02);
+}
+body.light-mode .activity-header h3,
+body.light-mode .modal-box h3 {
+    color: #1e293b;
+}
+body.light-mode .modal-box {
+    background: white;
+    border-color: rgba(0,0,0,0.08);
+}
+body.light-mode .modal-box textarea {
+    background: #f8fafc;
+    color: #1e293b;
+    border-color: #e2e8f0;
+}
+body.light-mode .activity-toggle {
+    background: white;
+    border-color: rgba(0,0,0,0.1);
+    color: #64748b;
+}
+
+/* Adjust main content when sidebar is open */
+.main-with-sidebar {
+    margin-right: 320px;
+    transition: margin-right 0.3s ease;
+}
+.main-with-sidebar.collapsed {
+    margin-right: 0;
+}
+
+@media (max-width: 1100px) {
+    .activity-sidebar { width: 280px; }
+    .main-with-sidebar { margin-right: 0; }
+    .activity-toggle { display: none; }
 }
 
 /* ============================================

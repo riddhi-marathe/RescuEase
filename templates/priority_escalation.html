@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Priority Escalation Monitor - RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .escalation-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .escalation-header h1 {
+            font-size: 1.8rem;
+            color: #f1f5f9;
+            flex: 1;
+        }
+
+        .escalation-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #38bdf8;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .escalation-list {
+            margin-top: 2rem;
+        }
+
+        .escalation-item {
+            background: rgba(255,255,255,0.02);
+            border-left: 4px solid transparent;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .escalation-item:hover {
+            background: rgba(255,255,255,0.04);
+            transform: translateX(5px);
+        }
+
+        .escalation-item.level-1 { border-left-color: #fbbf24; }
+        .escalation-item.level-2 { border-left-color: #f59e0b; }
+        .escalation-item.level-3.blink-critical {
+            animation: blink-red 1s ease-in-out infinite;
+            border-left-width: 6px;
+        }
+        @keyframes blink-red {
+            0%, 100% { border-left-color: #ef4444; box-shadow: 0 0 0 0 rgba(239,68,68,0.3); }
+            50% { border-left-color: #ff0000; box-shadow: 0 0 25px 4px rgba(239,68,68,0.5); }
+        }
+
+        .escalation-item-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1rem;
+            gap: 1rem;
+        }
+
+        .escalation-item-title {
+            flex: 1;
+        }
+
+        .escalation-item-title h3 {
+            font-size: 1.1rem;
+            color: #f1f5f9;
+            margin-bottom: 0.25rem;
+        }
+
+        .escalation-item-meta {
+            font-size: 0.85rem;
+            color: #64748b;
+        }
+
+        .escalation-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .escalation-badge.level-1 {
+            background: rgba(251,191,36,0.15);
+            color: #fbbf24;
+        }
+
+        .escalation-badge.level-2 {
+            background: rgba(245,158,11,0.15);
+            color: #f59e0b;
+        }
+
+        .escalation-badge.level-3 {
+            background: rgba(239,68,68,0.15);
+            color: #ef4444;
+        }
+
+        .escalation-item-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .info-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #94a3b8;
+        }
+
+        .info-row i {
+            width: 20px;
+            text-align: center;
+            color: #38bdf8;
+        }
+
+        .escalation-item-actions {
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+
+        .escalation-btn {
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .escalation-btn-escalate {
+            background: rgba(239,68,68,0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239,68,68,0.3);
+        }
+
+        .escalation-btn-escalate:hover {
+            background: rgba(239,68,68,0.25);
+        }
+
+        .escalation-btn-resolve {
+            background: rgba(16,185,129,0.15);
+            color: #10b981;
+            border: 1px solid rgba(16,185,129,0.3);
+        }
+
+        .escalation-btn-resolve:hover {
+            background: rgba(16,185,129,0.25);
+        }
+
+        .escalation-timeline {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .timeline-item {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+            font-size: 0.85rem;
+        }
+
+        .timeline-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-top: 0.4rem;
+            flex-shrink: 0;
+            background: #38bdf8;
+        }
+
+        .timeline-content {
+            color: #64748b;
+        }
+
+        .timeline-time {
+            color: #475569;
+            font-size: 0.75rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #64748b;
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #475569;
+            margin-bottom: 1rem;
+        }
+
+        .page-entrance {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body>
+    {% include 'navbar.html' %}
+
+    <div class="page-entrance" style="padding: 2rem; margin-top: 80px;">
+        <div class="container">
+            <!-- Header -->
+            <div class="escalation-header">
+                <div>
+                    <h1><i class="fas fa-exclamation-triangle"></i> Priority Escalation Monitor</h1>
+                    <p style="color: #64748b; margin-top: 0.5rem;">Real-time emergency escalation tracking</p>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="escalation-stats">
+                <div class="stat-card">
+                    <div class="stat-value" id="level-1-count">0</div>
+                    <div class="stat-label">Level 1 Emergencies</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="level-2-count">0</div>
+                    <div class="stat-label">Level 2 Emergencies</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="level-3-count">0</div>
+                    <div class="stat-label">Level 3 Emergencies</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="avg-response-time">--</div>
+                    <div class="stat-label">Avg Response Time</div>
+                </div>
+            </div>
+
+            <!-- Escalation List -->
+            <div class="escalation-list" id="escalation-container">
+                <div class="empty-state">
+                    <i class="fas fa-inbox"></i>
+                    <p>No active emergencies</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/socket.js') }}"></script>
+    <script>
+        const socket = io();
+        let emergencies = {};
+
+        // Load initial data
+        function loadEmergencies() {
+            fetch('/dashboard')
+                .then(r => r.text())
+                .then(html => {
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    // Extract emergency data from dashboard if available
+                    updateStats();
+                });
+        }
+
+        // Socket events
+        socket.on('new_emergency', (data) => {
+            emergencies[data.id] = data;
+            renderEmergencies();
+        });
+
+        socket.on('escalation', (data) => {
+            if (emergencies[data.emergency_id]) {
+                emergencies[data.emergency_id].escalation_level = data.new_level;
+                emergencies[data.emergency_id].escalated_by = data.escalated_by;
+                emergencies[data.emergency_id].escalated_at = data.timestamp;
+                renderEmergencies();
+            }
+        });
+
+        socket.on('status_updated', (data) => {
+            if (data.status === 'resolved' && emergencies[data.id]) {
+                delete emergencies[data.id];
+                renderEmergencies();
+            } else if (emergencies[data.id]) {
+                emergencies[data.id].status = data.status;
+                renderEmergencies();
+            }
+        });
+
+        // Escalate emergency
+        function escalateEmergency(emergencyId) {
+            if (!confirm('Escalate this emergency to the next level?')) return;
+
+            fetch('/api/escalate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ emergency_id: emergencyId })
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.message) {
+                    alert(`Escalated to Level ${data.new_level}`);
+                }
+            })
+            .catch(e => alert('Escalation failed: ' + e.message));
+        }
+
+        // Resolve emergency
+        function resolveEmergency(emergencyId) {
+            if (!confirm('Mark this emergency as resolved?')) return;
+
+            fetch(`/update_status/${emergencyId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'resolved' })
+            })
+            .then(r => r.json())
+            .then(data => {
+                alert('Emergency resolved');
+            })
+            .catch(e => alert('Resolution failed: ' + e.message));
+        }
+
+        // Render emergencies
+        function renderEmergencies() {
+            const container = document.getElementById('escalation-container');
+            const sorted = Object.values(emergencies)
+                .filter(e => e.status !== 'resolved')
+                .sort((a, b) => (b.escalation_level || 1) - (a.escalation_level || 1));
+
+            if (sorted.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No active emergencies</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = sorted.map(e => {
+                const level = e.escalation_level || 1;
+                const timestamp = new Date(e.timestamp);
+                const elapsed = Math.floor((Date.now() - timestamp) / 1000);
+                const elapsedStr = elapsed < 60 ? `${elapsed}s ago` : 
+                                   elapsed < 3600 ? `${Math.floor(elapsed/60)}m ago` : 
+                                   `${Math.floor(elapsed/3600)}h ago`;
+
+                return `
+                    <div class="escalation-item level-${level}">
+                        <div class="escalation-item-header">
+                            <div class="escalation-item-title">
+                                <h3>${e.name}</h3>
+                                <div class="escalation-item-meta">
+                                    Emergency #${e.id} • ${elapsedStr}
+                                </div>
+                            </div>
+                            <span class="escalation-badge level-${level}">
+                                Level ${level}
+                            </span>
+                        </div>
+
+                        <div class="escalation-item-info">
+                            <div class="info-row">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>${e.location}</span>
+                            </div>
+                            <div class="info-row">
+                                <i class="fas fa-pulse"></i>
+                                <span>${e.status || 'pending'}</span>
+                            </div>
+                            <div class="info-row">
+                                <i class="fas fa-exclamation-circle"></i>
+                                <span>${e.emergency_type || 'unknown'}</span>
+                            </div>
+                        </div>
+
+                        <div class="escalation-item-actions">
+                            ${level < 3 ? `
+                                <button class="escalation-btn escalation-btn-escalate" 
+                                        onclick="escalateEmergency(${e.id})">
+                                    <i class="fas fa-arrow-up"></i> Escalate
+                                </button>
+                            ` : ''}
+                            <button class="escalation-btn escalation-btn-resolve" 
+                                    onclick="resolveEmergency(${e.id})">
+                                <i class="fas fa-check"></i> Resolve
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            updateStats();
+        }
+
+        // Update statistics
+        function updateStats() {
+            const items = Object.values(emergencies).filter(e => e.status !== 'resolved');
+            const level1 = items.filter(e => (e.escalation_level || 1) === 1).length;
+            const level2 = items.filter(e => (e.escalation_level || 1) === 2).length;
+            const level3 = items.filter(e => (e.escalation_level || 1) === 3).length;
+
+            document.getElementById('level-1-count').textContent = level1;
+            document.getElementById('level-2-count').textContent = level2;
+            document.getElementById('level-3-count').textContent = level3;
+
+            // Calculate average response time
+            const resolved = Object.values(emergencies).filter(e => e.status === 'resolved');
+            if (resolved.length > 0) {
+                const avgTime = resolved.reduce((sum, e) => sum + (e.response_time_seconds || 0), 0) / resolved.length;
+                const minutes = Math.floor(avgTime / 60);
+                const seconds = Math.floor(avgTime % 60);
+                document.getElementById('avg-response-time').textContent = `${minutes}m ${seconds}s`;
+            }
+        }
+
+        // Initial load
+        loadEmergencies();
+
+        // Auto-escalate if pending > 30 seconds
+        setInterval(() => {
+            Object.values(emergencies).forEach(e => {
+                if (e.status === 'pending') {
+                    const elapsed = (Date.now() - new Date(e.timestamp)) / 1000;
+                    if (elapsed > 30 && e.escalation_level === 1) {
+                        console.log(`Auto-escalating emergency ${e.id} (${elapsed}s elapsed)`);
+                        escalateEmergency(e.id);
+                    }
+                }
+            });
+        }, 5000);
+    </script>
+</body>
+</html>

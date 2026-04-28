@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Camera Feeds | RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="dark-page">
+    <header class="topbar">
+        <nav class="container">
+            <a href="/dashboard" class="logo"><i class="fas fa-shield-alt"></i> RescuEase</a>
+            <div class="nav-actions">
+                <a href="/dashboard" class="btn btn-secondary"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="/incident-log" class="btn btn-secondary"><i class="fas fa-chart-bar"></i> Analytics</a>
+                <a href="/resources" class="btn btn-secondary"><i class="fas fa-boxes"></i> Resources</a>
+                <a href="/logout" class="btn btn-secondary"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container page-entrance" style="padding-top: 100px;">
+        <div class="dashboard-header-bar">
+            <div>
+                <h1><i class="fas fa-video" style="color:#ef4444;"></i> AI Live Camera Feeds</h1>
+                <p class="dashboard-subtitle">Real-time threat detection via OpenCV-powered analytics</p>
+            </div>
+            <button onclick="simulateAIDetection()" class="btn-pro" style="background:linear-gradient(135deg,#ef4444,#f97316);color:white;">
+                <i class="fas fa-robot"></i> Simulate AI Detection
+            </button>
+        </div>
+
+        <div id="camera-grid" class="camera-grid stagger-children">
+            <!-- Camera 1: Lobby -->
+            <div class="camera-card" data-camera="1">
+                <div class="camera-feed">
+                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=350&fit=crop" alt="Lobby Camera">
+                    <div class="camera-overlay online"><i class="fas fa-circle"></i> LIVE</div>
+                    <div style="position:absolute;bottom:0.75rem;left:0.75rem;background:rgba(0,0,0,0.6);color:white;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.75rem;">
+                        <i class="fas fa-clock"></i> <span class="cam-time">00:00:00</span>
+                    </div>
+                </div>
+                <div class="camera-body">
+                    <h4><i class="fas fa-door-open"></i> Lobby Camera</h4>
+                    <p>Zone: Main Lobby &bull; Coverage: 360°</p>
+                    <div class="detection-badge none" data-detection="1"><i class="fas fa-check"></i> No Threat Detected</div>
+                </div>
+            </div>
+
+            <!-- Camera 2: Kitchen -->
+            <div class="camera-card" data-camera="2">
+                <div class="camera-feed">
+                    <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&h=350&fit=crop" alt="Kitchen Camera">
+                    <div class="camera-overlay online"><i class="fas fa-circle"></i> LIVE</div>
+                    <div style="position:absolute;bottom:0.75rem;left:0.75rem;background:rgba(0,0,0,0.6);color:white;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.75rem;">
+                        <i class="fas fa-clock"></i> <span class="cam-time">00:00:00</span>
+                    </div>
+                </div>
+                <div class="camera-body">
+                    <h4><i class="fas fa-utensils"></i> Kitchen Camera</h4>
+                    <p>Zone: Kitchen &bull; Coverage: 180°</p>
+                    <div class="detection-badge none" data-detection="2"><i class="fas fa-check"></i> No Threat Detected</div>
+                </div>
+            </div>
+
+            <!-- Camera 3: Hallway A -->
+            <div class="camera-card" data-camera="3">
+                <div class="camera-feed">
+                    <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&h=350&fit=crop" alt="Hallway Camera">
+                    <div class="camera-overlay online"><i class="fas fa-circle"></i> LIVE</div>
+                    <div style="position:absolute;bottom:0.75rem;left:0.75rem;background:rgba(0,0,0,0.6);color:white;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.75rem;">
+                        <i class="fas fa-clock"></i> <span class="cam-time">00:00:00</span>
+                    </div>
+                </div>
+                <div class="camera-body">
+                    <h4><i class="fas fa-walking"></i> Hallway A</h4>
+                    <p>Zone: Floor 1 Hallway &bull; Coverage: 120°</p>
+                    <div class="detection-badge smoke" data-detection="3"><i class="fas fa-smog"></i> Smoke Detected</div>
+                </div>
+            </div>
+
+            <!-- Camera 4: Parking -->
+            <div class="camera-card" data-camera="4">
+                <div class="camera-feed">
+                    <img src="https://images.unsplash.com/photo-1506521781263-d8422e82f27a?w=600&h=350&fit=crop" alt="Parking Camera">
+                    <div class="camera-overlay online"><i class="fas fa-circle"></i> LIVE</div>
+                    <div style="position:absolute;bottom:0.75rem;left:0.75rem;background:rgba(0,0,0,0.6);color:white;padding:0.3rem 0.7rem;border-radius:6px;font-size:0.75rem;">
+                        <i class="fas fa-clock"></i> <span class="cam-time">00:00:00</span>
+                    </div>
+                </div>
+                <div class="camera-body">
+                    <h4><i class="fas fa-car"></i> Parking</h4>
+                    <p>Zone: Basement Parking &bull; Coverage: 270°</p>
+                    <div class="detection-badge none" data-detection="4"><i class="fas fa-check"></i> No Threat Detected</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Detection Log -->
+        <div class="card" style="margin-top: 2rem;">
+            <div class="section-header" style="margin-top:0;">
+                <h2><i class="fas fa-history"></i> AI Detection Log</h2>
+            </div>
+            <table class="data-table" style="color:#cbd5e1;">
+                <thead>
+                    <tr>
+                        <th>Time</th>
+                        <th>Camera</th>
+                        <th>Threat Type</th>
+                        <th>Confidence</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="detection-log">
+                    <tr>
+                        <td style="color:#64748b;">--</td>
+                        <td style="color:#64748b;">--</td>
+                        <td style="color:#64748b;">--</td>
+                        <td style="color:#64748b;">--</td>
+                        <td><span class="status-pill resolved" style="font-size:0.7rem;">IDLE</span></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <script>
+        // Update camera timestamps
+        setInterval(() => {
+            document.querySelectorAll('.cam-time').forEach(el => {
+                const now = new Date();
+                el.textContent = now.toLocaleTimeString('en-GB');
+            });
+        }, 1000);
+
+        // Simulate AI Detection
+        function simulateAIDetection() {
+            const cameras = [
+                {id: 1, name: 'Lobby Camera', zone: 'Lobby'},
+                {id: 2, name: 'Kitchen Camera', zone: 'Kitchen'},
+                {id: 3, name: 'Hallway A', zone: 'Floor 1 Hallway'},
+                {id: 4, name: 'Parking', zone: 'Basement Parking'}
+            ];
+            const threats = ['smoke', 'fire', 'flood', 'intruder'];
+            const cam = cameras[Math.floor(Math.random() * cameras.length)];
+            const threat = threats[Math.floor(Math.random() * threats.length)];
+            const confidence = (Math.random() * 0.3 + 0.7).toFixed(2);
+
+            // Update camera badge
+            const badge = document.querySelector('.detection-badge[data-detection="' + cam.id + '"]');
+            if (badge) {
+                badge.className = 'detection-badge ' + threat;
+                badge.innerHTML = '<i class="fas fa-exclamation-triangle"></i> ' + threat.toUpperCase() + ' (' + confidence + ')';
+            }
+
+            // Add to log
+            const logBody = document.getElementById('detection-log');
+            const row = document.createElement('tr');
+            row.innerHTML = '<td>' + new Date().toLocaleTimeString() + '</td>' +
+                '<td>' + cam.name + '</td>' +
+                '<td><span class="priority-tag priority-critical">' + threat.toUpperCase() + '</span></td>' +
+                '<td>' + confidence + '</td>' +
+                '<td><span class="status-pill pending" style="font-size:0.7rem;">AUTO-ALERTED</span></td>';
+            if (logBody.children[0] && logBody.children[0].textContent.includes('--')) {
+                logBody.innerHTML = '';
+            }
+            logBody.insertBefore(row, logBody.firstChild);
+
+            // Call AI detect API to create real emergency
+            fetch('/api/ai-detect', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sensor_data: threat})
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.threat_detected) {
+                    alert('AI DETECTED: ' + threat.toUpperCase() + ' at ' + cam.zone + '!\nEmergency #' + data.emergency_id + ' created automatically.');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+
