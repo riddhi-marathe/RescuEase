@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Evacuation Route - RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .evac-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+        .evac-header h1 { font-size: 1.5rem; color: #f1f5f9; }
+        .evac-header p { color: #64748b; font-size: 0.9rem; }
+        .evac-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
+        .evac-map {
+            background: #0f172a;
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 16px;
+            min-height: 400px;
+            position: relative;
+            overflow: hidden;
+        }
+        .map-grid {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .room-dot {
+            position: absolute;
+            width: 28px; height: 28px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+        .exit-dot {
+            position: absolute;
+            width: 32px; height: 32px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #34d399, #059669);
+            display: flex; align-items: center; justify-content: center;
+            color: white;
+            font-size: 0.8rem;
+            border: 2px solid #34d399;
+            box-shadow: 0 0 20px rgba(52,211,153,0.3);
+            animation: exit-pulse 2s infinite;
+        }
+        @keyframes exit-pulse {
+            0%, 100% { box-shadow: 0 0 20px rgba(52,211,153,0.3); }
+            50% { box-shadow: 0 0 35px rgba(52,211,153,0.5); }
+        }
+        .route-line {
+            position: absolute;
+            height: 3px;
+            background: linear-gradient(90deg, #0ea5e9, #34d399);
+            border-radius: 3px;
+            transform-origin: left center;
+        }
+        .legend { display: flex; gap: 1.5rem; margin-top: 1rem; font-size: 0.85rem; color: #94a3b8; }
+        .legend-item { display: flex; align-items: center; gap: 0.5rem; }
+        .legend-dot { width: 12px; height: 12px; border-radius: 50%; }
+        .exit-list { margin-top: 1rem; }
+        .exit-row {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .exit-row:last-child { border-bottom: none; }
+        .exit-row.active { background: rgba(52,211,153,0.08); }
+        .exit-row.active h4 { color: #34d399; }
+        @media (max-width: 768px) { .evac-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/" class="logo"><i class="fas fa-shield-alt"></i> RescuEase</a>
+            <div>
+                <a href="/contacts" class="btn btn-secondary">Emergency</a>
+                <a href="/dashboard" class="btn btn-secondary">Dashboard</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container page-entrance" style="padding-top: 100px;">
+        <div class="evac-header">
+            <div style="width: 52px; height: 52px; background: linear-gradient(135deg, #f59e0b, #fb923c); border-radius: 14px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.4rem;">
+                <i class="fas fa-running"></i>
+            </div>
+            <div>
+                <h1>Evacuation Route</h1>
+                <p>Room {{ room.room_number }} — Floor {{ room.floor_number }} • Nearest exit calculated automatically.</p>
+            </div>
+
+        <div class="evac-grid">
+            <div class="evac-map">
+                <div class="map-grid"></div>
+                <div class="room-dot" style="left: {{ room.x_position | default(50) }}%; top: {{ room.y_position | default(50) }}%;">
+                    <i class="fas fa-bed"></i>
+                </div>
+                {% for exit in exits %}
+                <div class="exit-dot" style="left: {{ exit.x_position | default(80) }}%; top: {{ exit.y_position | default(80) }}%;" title="{{ exit.exit_name }}">
+                    <i class="fas fa-door-open"></i>
+                </div>
+                {% endfor %}
+                {% if nearest_exit %}
+                <div class="route-line" style="
+                    left: {{ room.x_position | default(50) }}%;
+                    top: {{ room.y_position | default(50) }}%;
+                    width: {{ ((nearest_exit.x_position|default(80) - room.x_position|default(50))**2 + (nearest_exit.y_position|default(80) - room.y_position|default(50))**2)**0.5 | default(20) }}%;
+                    transform: rotate({{ ((nearest_exit.y_position|default(80) - room.y_position|default(50)) / (nearest_exit.x_position|default(80) - room.x_position|default(50) + 0.01)) | atan * 180 / 3.14159 | default(0) }}deg);
+                "></div>
+                {% endif %}
+            </div>
+
+            <div>
+                <h3 style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+                    <i class="fas fa-door-open"></i> Available Exits
+                </h3>
+                <div class="card" style="padding: 0; overflow: hidden;">
+                    <div class="exit-list">
+                        {% for exit in exits %}
+                        <div class="exit-row {% if nearest_exit and nearest_exit.id == exit.id %}active{% endif %}">
+                            <i class="fas fa-door-open" style="color:{% if nearest_exit and nearest_exit.id == exit.id %}#34d399{% else %}#64748b{% endif %};"></i>
+                            <div style="flex:1;">
+                                <h4 style="font-size: 0.95rem; color: #e2e8f0; margin-bottom: 0.15rem;">{{ exit.exit_name }}</h4>
+                                <p style="font-size: 0.8rem; color: #64748b;">{{ exit.exit_type | replace('_', ' ') | title }} • Floor {{ exit.floor_number }}</p>
+                            </div>
+                            {% if nearest_exit and nearest_exit.id == exit.id %}
+                            <span style="background:rgba(52,211,153,0.15); color:#34d399; padding:4px 12px; border-radius:50px; font-size:0.7rem; font-weight:700;">NEAREST</span>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#0ea5e9,#6366f1);"></div> Room</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#34d399,#059669);"></div> Exit</div>
+                    <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(90deg,#0ea5e9,#34d399);"></div> Route</div>
+
+                <div style="margin-top: 1.5rem; padding: 1rem; background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2); border-radius: 12px;">
+                    <p style="color: #fbbf24; font-size: 0.9rem; font-weight: 600;"><i class="fas fa-exclamation-circle"></i> Instructions</p>
+                    <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 0.25rem;">Follow the green route line. Do not use elevators. Stay low if there is smoke. Assembly point is outside the main entrance.</p>
+                </div>
+        </div>
+</body>
+</html>

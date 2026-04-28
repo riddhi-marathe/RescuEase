@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Dashboard - RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .welcome-bar { display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; }
+        .welcome-bar h1 { font-size: 1.5rem; color: #f1f5f9; }
+        .welcome-bar p { color: #94a3b8; font-size: 0.95rem; }
+        .action-bar { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+        .action-btn {
+            display: flex; align-items: center; gap: 0.75rem;
+            padding: 1rem 1.5rem;
+            background: rgba(30,41,59,0.6);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 14px;
+            color: #e2e8f0;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        .action-btn:hover { transform: translateY(-3px); background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.12); }
+        .action-btn i { font-size: 1.3rem; }
+        .action-btn.sos i { color: #ef4444; }
+        .action-btn.route i { color: #fbbf24; }
+        .action-btn.contacts i { color: #38bdf8; }
+        .emg-list { margin-top: 1rem; }
+        .emg-item {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .emg-item:last-child { border-bottom: none; }
+        .emg-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .emg-dot.pending { background: #fbbf24; }
+        .emg-dot.in-progress { background: #38bdf8; }
+        .emg-dot.resolved { background: #34d399; }
+        .emg-info { flex: 1; }
+        .emg-info h4 { font-size: 0.9rem; color: #e2e8f0; }
+        .emg-meta { font-size: 0.8rem; color: #64748b; }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/" class="logo"><i class="fas fa-shield-alt"></i> RescuEase</a>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <span style="color: white; opacity: 0.9;"><i class="fas fa-user"></i> {{ guest.name }}</span>
+                <a href="/contacts" class="btn btn-secondary"><i class="fas fa-phone"></i> Emergency</a>
+                <a href="/guest/logout" class="btn btn-secondary"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container page-entrance" style="padding-top: 100px;">
+        <div class="welcome-bar">
+            <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #0ea5e9, #6366f1); border-radius: 16px; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.5rem;">
+                <i class="fas fa-user"></i>
+            </div>
+            <div>
+                <h1>Welcome, {{ guest.name }}</h1>
+                <p>Room {{ guest.room_number or 'N/A' }} <span style="color:#34d399;"><i class="fas fa-check-circle"></i> Approved</span></p>
+            </div>
+        </div>
+
+        <div class="action-bar">
+            <a href="/sos" class="action-btn sos"><i class="fas fa-exclamation-triangle"></i> Emergency SOS</a>
+            <a href="/evacuation/{{ guest.room_number or '101' }}" class="action-btn route"><i class="fas fa-running"></i> Evacuation Route</a>
+            <a href="/contacts" class="action-btn contacts"><i class="fas fa-phone-alt"></i> Emergency Contacts</a>
+        </div>
+
+        <h3 style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+            <i class="fas fa-history"></i> My Emergency History
+        </h3>
+        <div class="card" style="padding: 0; overflow: hidden;">
+            {% if my_emergencies %}
+            <div class="emg-list">
+                {% for e in my_emergencies %}
+                <div class="emg-item">
+                    <div class="emg-dot {{ e.status }}"></div>
+                    <div class="emg-info">
+                        <h4>#{{ e.id }} &mdash; {{ e.emergency_type | default('medical') | title }}</h4>
+                        <p class="emg-meta">{{ e.location }} &bull; {{ e.timestamp }}</p>
+                    </div>
+                    <a href="/track/{{ e.id }}" class="btn btn-primary" style="padding: 5px 14px; font-size: 0.8rem; border-radius: 8px;">Track</a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="text-align: center; color: #64748b; padding: 3rem;">No emergency history yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
+

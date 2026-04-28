@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RescuEase Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/" class="logo"><i class="fas fa-shield-alt"></i> RescuEase Crisis Suite</a>
+            <div class="nav-actions">
+                <a href="/incident-log" class="btn btn-secondary"><i class="fas fa-chart-bar"></i> Analytics</a>
+                <a href="/resources" class="btn btn-secondary"><i class="fas fa-boxes"></i> Resources</a>
+                <a href="/contacts" class="btn btn-secondary"><i class="fas fa-phone"></i> Contacts</a>
+                <a href="/staff/profile" class="btn btn-secondary"><i class="fas fa-user"></i> Profile</a>
+                <a href="/logout" class="btn btn-secondary"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container dashboard-container page-entrance">
+        <!-- Hero Image Banner -->
+        <div class="page-hero" style="background: linear-gradient(rgba(7,17,31,0.7), rgba(7,17,31,0.8)), url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=1400&h=300&fit=crop'); background-size: cover; background-position: center; border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h1 style="color: white; font-size: 1.8rem; margin-bottom: 0.25rem;"><i class="fas fa-tachometer-alt"></i> Operations Dashboard</h1>
+                <p style="color: #94a3b8; font-size: 0.95rem;">Real-time crisis monitoring</p>
+            </div>
+            <div class="dashboard-meta">
+                <span class="live-indicator"><i class="fas fa-circle"></i> LIVE</span>
+            </div>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card kpi-total">
+                <div class="kpi-icon"><i class="fas fa-clipboard-list"></i></div>
+                <div class="kpi-body">
+                    <h2>{{ total_emergencies }}</h2>
+                    <p>Total Incidents</p>
+                </div>
+            </div>
+            <div class="kpi-card kpi-pending">
+                <div class="kpi-icon"><i class="fas fa-exclamation-circle"></i></div>
+                <div class="kpi-body">
+                    <h2>{{ pending_count }}</h2>
+                    <p>Pending Alerts</p>
+                </div>
+            </div>
+            <div class="kpi-card kpi-resolved">
+                <div class="kpi-icon"><i class="fas fa-check-circle"></i></div>
+                <div class="kpi-body">
+                    <h2>{{ resolved_count }}</h2>
+                    <p>Resolved</p>
+                </div>
+            </div>
+            <div class="kpi-card kpi-response">
+                <div class="kpi-icon"><i class="fas fa-stopwatch"></i></div>
+                <div class="kpi-body">
+                    <h2>{{ avg_response }}s</h2>
+                    <p>Avg Response</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Swipe Cards: Quick Actions -->
+        <div class="section-header">
+            <h2><i class="fas fa-bolt"></i> Quick Actions</h2>
+        </div>
+        <p class="swipe-hint"><i class="fas fa-hand-pointer"></i> Swipe <i class="fas fa-arrow-right"></i></p>
+        <div class="swipe-container">
+            <a href="/contacts" class="swipe-card-dark" style="text-decoration: none; color: inherit;">
+                <div style="padding: 1.5rem;">
+                    <div style="width: 48px; height: 48px; background: rgba(239,68,68,0.15); color: #ef4444; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 1rem;">
+                        <i class="fas fa-phone-alt"></i>
+                    </div>
+                    <h3 style="color: #f1f5f9; font-size: 1.1rem; margin-bottom: 0.5rem;">Emergency Contacts</h3>
+                    <p style="color: #94a3b8; font-size: 0.9rem;">One-click dial to hospital, fire, police, and ambulance services.</p>
+                </div>
+            </a>
+            <a href="/incident-log" class="swipe-card-dark" style="text-decoration: none; color: inherit;">
+                <div style="padding: 1.5rem;">
+                    <div style="width: 48px; height: 48px; background: rgba(56,189,248,0.15); color: #38bdf8; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 1rem;">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3 style="color: #f1f5f9; font-size: 1.1rem; margin-bottom: 0.5rem;">Incident Analytics</h3>
+                    <p style="color: #94a3b8; font-size: 0.9rem;">View charts, trends, and historical incident data reports.</p>
+                </div>
+            </a>
+            <a href="/resources" class="swipe-card-dark" style="text-decoration: none; color: inherit;">
+                <div style="padding: 1.5rem;">
+                    <div style="width: 48px; height: 48px; background: rgba(52,211,153,0.15); color: #34d399; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 1rem;">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <h3 style="color: #f1f5f9; font-size: 1.1rem; margin-bottom: 0.5rem;">Resource Inventory</h3>
+                    <p style="color: #94a3b8; font-size: 0.9rem;">Check availability of first-aid, fire extinguishers, and AEDs.</p>
+                </div>
+            </a>
+            <a href="/admin/approvals" class="swipe-card-dark" style="text-decoration: none; color: inherit;">
+                <div style="padding: 1.5rem;">
+                    <div style="width: 48px; height: 48px; background: rgba(167,139,250,0.15); color: #a78bfa; border-radius: 14px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; margin-bottom: 1rem;">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <h3 style="color: #f1f5f9; font-size: 1.1rem; margin-bottom: 0.5rem;">Guest Approvals</h3>
+                    <p style="color: #94a3b8; font-size: 0.9rem;">Review and approve pending guest access requests.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- AI Threat Detection -->
+        <div class="card ai-card">
+            <div class="ai-card-header">
+                <div class="ai-icon"><i class="fas fa-robot"></i></div>
+                <div>
+                    <h3>AI Threat Detection</h3>
+                    <p>Automated surveillance scan for smoke, fire, flood, earthquake, and intruders</p>
+                </div>
+            </div>
+            <button onclick="simulateAI()" class="btn btn-primary">
+                <i class="fas fa-brain"></i> Run AI Detection Scan
+            </button>
+            <div id="ai-result" style="margin-top: 1rem;"></div>
+        </div>
+
+        <div class="section-header">
+            <h2><i class="fas fa-stream"></i> Live Crisis Monitor</h2>
+            <span class="badge-count">{{ emergencies|length }} active</span>
+        </div>
+
+        <div class="dashboard-grid" id="emergencies-container">
+            {% for emergency in emergencies[:6] %}
+            <div class="emergency-card-pro {{ emergency.status }}" data-emergency-id="{{ emergency.id }}">
+                <div class="card-status-bar"></div>
+                <div class="card-body">
+                    <div class="card-header-row">
+                        <h3>#{{ emergency.id }} &mdash; {{ emergency.name }}</h3>
+                        <span class="status-pill {{ emergency.status }}">{{ emergency.status | upper }}</span>
+                    </div>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-tag"></i> Type</span>
+                            <span class="type-badge">{{ emergency.emergency_type | default('medical') | upper }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-map-marker-alt"></i> Location</span>
+                            <span>{{ emergency.location }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-door-open"></i> Room</span>
+                            <span>{{ emergency.room_number or 'N/A' }}</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label"><i class="fas fa-clock"></i> Reported</span>
+                            <span>{{ emergency.timestamp }}</span>
+                        </div>
+                    </div>
+                    {% if emergency.status != 'resolved' %}
+                    <div class="action-buttons-pro">
+                        <a href="/evacuation/{{ emergency.room_number or '101' }}" class="btn-pro btn-danger"><i class="fas fa-running"></i> Evacuate</a>
+                        <a href="/track/{{ emergency.id }}" class="btn-pro btn-primary"><i class="fas fa-map-marker-alt"></i> Track</a>
+                        <button onclick="acknowledge({{ emergency.id }})" class="btn-pro btn-success"><i class="fas fa-check"></i> Acknowledge</button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Resource Status -->
+        <div class="section-header">
+            <h2><i class="fas fa-boxes"></i> Resource Status Overview</h2>
+        </div>
+        <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));">
+            {% for resource in resources %}
+            <div class="resource-card">
+                <div class="resource-icon-wrap {{ resource.status }}">
+                    <i class="fas fa-{% if resource.resource_type == 'first_aid' %}first-aid{% elif resource.resource_type == 'fire_extinguisher' %}fire-extinguisher{% elif resource.resource_type == 'oxygen' %}wind{% else %}heartbeat{% endif %}"></i>
+                </div>
+                <div class="resource-body">
+                    <h4>{{ resource.resource_name }}</h4>
+                    <p class="resource-meta">Floor {{ resource.floor_number }} &bull; Qty: {{ resource.quantity }}</p>
+                    <div class="resource-meter">
+                        <div class="resource-meter-fill {{ resource.status }}" style="width: {% if resource.status == 'available' %}100%{% elif resource.status == 'in-use' %}60%{% else %}20%{% endif %}"></div>
+                    </div>
+                    <span class="resource-status-text {{ resource.status }}">{{ resource.status | upper }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/socket.js') }}"></script>
+    <script>
+        function acknowledge(id) {
+            fetch('/api/acknowledge/' + id, {method: 'POST'})
+                .then(r => r.json())
+                .then(data => { showNotification('Emergency acknowledged!'); });
+        }
+
+        function simulateAI() {
+            fetch('/api/ai-detect', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({sensor_data: 'camera_zone_a'})
+            })
+            .then(r => r.json())
+            .then(data => {
+                const resultDiv = document.getElementById('ai-result');
+                if (data.threat_detected) {
+                    resultDiv.innerHTML = `<div class="alert alert-error"><i class="fas fa-exclamation-triangle"></i> THREAT DETECTED: ${data.type.toUpperCase()} (Confidence: ${Math.round(data.confidence * 100)}%)</div>`;
+                } else {
+                    resultDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check-circle"></i> No threats detected (Confidence: ${Math.round(data.confidence * 100)}%)</div>`;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
+

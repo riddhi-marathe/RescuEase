@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Contacts | RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .contact-list { margin-top: 1rem; }
+        .contact-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            transition: background 0.2s;
+        }
+        .contact-row:hover { background: rgba(255,255,255,0.02); }
+        .contact-row:last-child { border-bottom: none; }
+        .contact-icon {
+            width: 44px; height: 44px;
+            border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .contact-icon.hospital { background: rgba(239,68,68,0.15); color: #ef4444; }
+        .contact-icon.fire { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .contact-icon.police { background: rgba(56,189,248,0.15); color: #38bdf8; }
+        .contact-icon.ambulance { background: rgba(52,211,153,0.15); color: #34d399; }
+        .contact-icon.other { background: rgba(167,139,250,0.15); color: #a78bfa; }
+        .contact-info { flex: 1; min-width: 0; }
+        .contact-info h4 { font-size: 1rem; color: #e2e8f0; margin-bottom: 0.15rem; }
+        .contact-meta { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; }
+        .contact-phone { font-size: 1.1rem; color: #94a3b8; font-weight: 600; }
+        .call-btn {
+            padding: 8px 18px;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            color: white;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .call-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(99,102,241,0.3); }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/" class="logo"><i class="fas fa-phone-alt"></i> RescuEase Emergency Directory</a>
+            <div>
+                <a href="/dashboard" class="btn btn-secondary">Dashboard</a>
+                <a href="/resources" class="btn btn-secondary">Resources</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container page-entrance" style="padding-top: 100px;">
+        <h1 style="font-size: 1.6rem; margin-bottom: 0.25rem;"><i class="fas fa-address-book" style="color:#34d399;"></i> Emergency Contacts</h1>
+        <p style="color: #64748b; margin-bottom: 1.5rem;">One-click dial to local authorities and emergency services.</p>
+
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <div class="contact-list">
+                {% for contact in contacts %}
+                <div class="contact-row">
+                    <div class="contact-icon {{ contact.contact_type }}">
+                        {% if contact.contact_type == 'hospital' %}<i class="fas fa-hospital"></i>
+                        {% elif contact.contact_type == 'fire' %}<i class="fas fa-fire-extinguisher"></i>
+                        {% elif contact.contact_type == 'police' %}<i class="fas fa-shield-alt"></i>
+                        {% elif contact.contact_type == 'ambulance' %}<i class="fas fa-ambulance"></i>
+                        {% else %}<i class="fas fa-phone"></i>{% endif %}
+                    </div>
+                    <div class="contact-info">
+                        <h4>{{ contact.name }}</h4>
+                        <p class="contact-meta">{{ contact.contact_type }}</p>
+                    </div>
+                    <span class="contact-phone">{{ contact.phone }}</span>
+                    <a href="tel:{{ contact.phone }}" class="call-btn"><i class="fas fa-phone"></i> Call</a>
+                </div>
+                {% endfor %}
+            </div>
+            {% if not contacts %}
+            <p style="text-align: center; color: #64748b; padding: 3rem;"><i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i> No contacts configured.</p>
+            {% endif %}
+        </div>
+</body>
+</html>

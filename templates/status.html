@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status - {{ emergency.name }} | RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/" class="logo"><i class="fas fa-shield-alt"></i> RescuEase Crisis Suite</a>
+            <div>
+                <a href="/track/{{ emergency.id }}" class="btn btn-primary"><i class="fas fa-map-marker-alt"></i> Track</a>
+                <a href="/dashboard" class="btn btn-secondary">Dashboard</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container" style="padding-top: 100px;">
+        <div class="card" style="max-width: 800px; margin: 0 auto;">
+            <div class="track-header">
+                <h1><i class="fas fa-heartbeat"></i> Emergency Status</h1>
+                <div class="status-badge big-badge {{ emergency.status }}">{{ emergency.status | upper }}</div>
+            </div>
+
+            <div class="emergency-card {{ emergency.status }}" style="margin: 2rem 0;">
+                <h2>#{{ emergency.id }} - {{ emergency.name }}</h2>
+                <p><strong><i class="fas fa-map-marker-alt"></i> Location:</strong> {{ emergency.location }}</p>
+                <p><strong><i class="fas fa-door-open"></i> Room:</strong> {{ emergency.room_number or 'N/A' }}</p>
+                <p><strong><i class="fas fa-clock"></i> Reported:</strong> {{ emergency.timestamp }}</p>
+                <p><strong><i class="fas fa-exclamation-circle"></i> Type:</strong> <span class="type-badge">{{ emergency.emergency_type | default('medical') | upper }}</span></p>
+                <p><strong><i class="fas fa-layer-group"></i> Escalation:</strong> Level {{ emergency.escalation_level | default(1) }}</p>
+                
+                <div class="map-container" id="status-map">
+                    <i class="fas fa-map-marked-alt" style="font-size: 3rem; color: #667eea;"></i>
+                    <p>Live Location: {{ emergency.location }}</p>
+                </div>
+            </div>
+
+            <!-- Resolution Progress -->
+            <div class="progress-container">
+                <h3><i class="fas fa-tasks"></i> Resolution Progress</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="{% if emergency.status == 'pending' %}width: 33%{% elif emergency.status == 'in-progress' %}width: 66%{% else %}width: 100%{% endif %}"></div>
+                </div>
+                <div class="progress-labels">
+                    <span class="{% if emergency.status == 'pending' %}active{% endif %}">🚨 Alerted</span>
+                    <span class="{% if emergency.status == 'in-progress' %}active{% endif %}">🚑 Responding</span>
+                    <span class="{% if emergency.status == 'resolved' %}active{% endif %}">✅ Resolved</span>
+                </div>
+            </div>
+
+            <!-- Live Updates -->
+            <div style="margin-top: 2rem; padding: 1.5rem; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 15px;">
+                <h3><i class="fas fa-broadcast-tower"></i> Live Updates</h3>
+                <div id="live-updates">
+                    <p><i class="fas fa-check-circle" style="color: #2ed573;"></i> Emergency team has been notified</p>
+                    <p><i class="fas fa-clock" style="color: #ffa502;"></i> Tracking activated at {{ emergency.timestamp }}</p>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="/evacuation/{{ emergency.room_number or '101' }}" class="btn" style="background: #ff6b6b; color: white; margin-right: 10px;">
+                    <i class="fas fa-running"></i> Evacuation Route
+                </a>
+                <a href="/contacts" class="btn btn-secondary">
+                    <i class="fas fa-phone"></i> Emergency Contacts
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/socket.js') }}"></script>
+    <script>
+        const socket = io();
+        socket.on('status_update', (data) => {
+            if (data.id === {{ emergency.id }}) {
+                location.reload();
+            }
+        });
+    </script>
+</body>
+</html>
+

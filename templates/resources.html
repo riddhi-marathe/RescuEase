@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources | RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .res-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1.25rem; margin-top: 1.5rem; }
+        .res-card {
+            background: #ffffff; border-radius: 16px; padding: 1.5rem;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06); text-align: center;
+            transition: all 0.3s ease;
+        }
+        .res-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.1); }
+        .res-icon {
+            width: 64px; height: 64px; border-radius: 18px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem; margin: 0 auto 1rem;
+        }
+        .res-icon.ok { background: #ecfdf5; color: #10b981; }
+        .res-icon.warn { background: #fffbeb; color: #f59e0b; }
+        .res-icon.crit { background: #fef2f2; color: #ef4444; }
+        .res-card h4 { font-size: 1.05rem; color: #1e293b; margin-bottom: 0.25rem; }
+        .res-meta { font-size: 0.85rem; color: #64748b; margin-bottom: 1rem; }
+        .res-status {
+            display: inline-block; padding: 5px 16px; border-radius: 50px;
+            font-size: 0.75rem; font-weight: 700; text-transform: uppercase; margin-bottom: 1rem;
+        }
+        .res-status.available { background: #ecfdf5; color: #047857; }
+        .res-status.in-use { background: #fffbeb; color: #b45309; }
+        .res-status.depleted { background: #fef2f2; color: #dc2626; }
+        .res-actions { display: flex; gap: 0.5rem; justify-content: center; }
+        .res-btn {
+            padding: 6px 14px; border-radius: 8px; font-size: 0.8rem; font-weight: 600;
+            border: none; cursor: pointer; transition: all 0.2s;
+        }
+        .res-btn:hover { transform: translateY(-1px); }
+        .res-btn.avail { background: #ecfdf5; color: #047857; }
+        .res-btn.use { background: #fffbeb; color: #b45309; }
+        .res-btn.depl { background: #fef2f2; color: #dc2626; }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/dashboard" class="logo"><i class="fas fa-tachometer-alt"></i> RescuEase</a>
+            <div>
+                <a href="/incident-log" class="btn btn-secondary">Analytics</a>
+                <a href="/contacts" class="btn btn-secondary">Contacts</a>
+                <a href="/logout" class="btn btn-secondary">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container page-entrance" style="padding-top: 100px;">
+        <h1 style="font-size: 1.6rem; margin-bottom: 0.25rem;"><i class="fas fa-boxes" style="color:#f59e0b;"></i> Resources</h1>
+        <p style="color: #64748b; margin-bottom: 1.5rem;">Emergency equipment and supplies status.</p>
+
+        <div class="res-grid">
+            {% for resource in resources %}
+            <div class="res-card">
+                <div class="res-icon {% if resource.status == 'available' %}ok{% elif resource.status == 'in-use' %}warn{% else %}crit{% endif %}">
+                    <i class="fas fa-{% if resource.resource_type == 'first_aid' %}first-aid{% elif resource.resource_type == 'fire_extinguisher' %}fire-extinguisher{% elif resource.resource_type == 'oxygen' %}wind{% else %}heartbeat{% endif %}"></i>
+                </div>
+                <h4>{{ resource.resource_name }}</h4>
+                <p class="res-meta">Floor {{ resource.floor_number }} &bull; Qty: {{ resource.quantity }}</p>
+                <span class="res-status {{ resource.status }}">{{ resource.status | upper }}</span>
+                <div class="res-actions">
+                    <button onclick="updateResource({{ resource.id }}, 'available')" class="res-btn avail">Avail</button>
+                    <button onclick="updateResource({{ resource.id }}, 'in-use')" class="res-btn use">Use</button>
+                    <button onclick="updateResource({{ resource.id }}, 'depleted')" class="res-btn depl">Depl</button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if not resources %}
+        <p style="text-align: center; color: #64748b; padding: 3rem;"><i class="fas fa-inbox" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i> No resources configured.</p>
+        {% endif %}
+    </div>
+
+    <script>
+        function updateResource(id, status) {
+            fetch('/api/resources/' + id + '/update', {
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({status: status, quantity: 1})
+            })
+            .then(r => r.json())
+            .then(data => { location.reload(); });
+        }
+    </script>
+</body>
+</html>
+

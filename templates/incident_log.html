@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incident Log & Analytics | RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; margin: 1.5rem 0; }
+        .stat-item { text-align: center; padding: 1rem 0; }
+        .stat-item h2 { font-size: 2.5rem; font-weight: 800; margin-bottom: 0.25rem; }
+        .stat-item p { color: #94a3b8; font-size: 0.9rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-total h2 { color: #38bdf8; }
+        .stat-pending h2 { color: #fbbf24; }
+        .stat-resolved h2 { color: #34d399; }
+        .stat-avg h2 { color: #a78bfa; }
+        .filter-bar { display: flex; gap: 0.75rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.5rem; }
+        .filter-input {
+            background: rgba(15,23,42,0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 10px 14px;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+        }
+        .filter-input:focus { outline: none; border-color: #38bdf8; }
+        .data-table { width: 100%; border-collapse: collapse; }
+        .data-table th {
+            background: rgba(15,23,42,0.8);
+            color: #94a3b8;
+            font-weight: 600;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .data-table td {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+            color: #cbd5e1;
+            font-size: 0.9rem;
+        }
+        .data-table tr:hover { background: rgba(255,255,255,0.02); }
+        .data-table tr:last-child td { border-bottom: none; }
+        .type-dot {
+            display: inline-block;
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-dot {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 12px;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-dot.pending { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .status-dot.in-progress { background: rgba(56,189,248,0.15); color: #38bdf8; }
+        .status-dot.resolved { background: rgba(52,211,153,0.15); color: #34d399; }
+        .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        @media (max-width: 768px) {
+            .stat-row { grid-template-columns: repeat(2, 1fr); }
+            .chart-grid { grid-template-columns: 1fr; }
+            .filter-bar { flex-direction: column; align-items: stretch; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/dashboard" class="logo"><i class="fas fa-tachometer-alt"></i> RescuEase</a>
+            <div>
+                <a href="/resources" class="btn btn-secondary">Resources</a>
+                <a href="/contacts" class="btn btn-secondary">Contacts</a>
+                <a href="/logout" class="btn btn-secondary">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container page-entrance" style="padding-top: 100px;">
+        <!-- Hero Image Banner -->
+        <div class="page-hero" style="background: linear-gradient(rgba(7,17,31,0.7), rgba(7,17,31,0.85)), url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1400&h=300&fit=crop'); background-size: cover; background-position: center; border-radius: 16px; padding: 2rem; margin-bottom: 1.5rem;">
+            <h1 style="color: white; font-size: 1.8rem; margin-bottom: 0.25rem;"><i class="fas fa-chart-bar" style="color:#38bdf8;"></i> Incident Log & Analytics</h1>
+            <p style="color: #94a3b8; font-size: 0.95rem;">Data-driven safety reports and historical incident analysis.</p>
+        </div>
+
+        <!-- Stats Row (no cards) -->
+        <div class="stat-row">
+            <div class="stat-item stat-total">
+                <h2>{{ emergencies | length }}</h2>
+                <p>Total Incidents</p>
+            </div>
+            <div class="stat-item stat-pending">
+                <h2>{{ emergencies | selectattr('status', 'equalto', 'pending') | list | length }}</h2>
+                <p>Pending</p>
+            </div>
+            <div class="stat-item stat-resolved">
+                <h2>{{ emergencies | selectattr('status', 'equalto', 'resolved') | list | length }}</h2>
+                <p>Resolved</p>
+            </div>
+            <div class="stat-item stat-avg">
+                <h2>
+                    {% set resolved = emergencies | selectattr('status', 'equalto', 'resolved') | list %}
+                    {% if resolved | length > 0 %}
+                        {{ (resolved | sum(attribute='response_time_seconds') / (resolved | length)) | round(1) }}s
+                    {% else %}N/A{% endif %}
+                </h2>
+                <p>Avg Response</p>
+            </div>
+        </div>
+
+        <!-- Charts in one card -->
+        <div class="card" style="margin: 1.5rem 0;">
+            <div class="chart-grid">
+                <div>
+                    <h3 style="margin-bottom: 1rem; font-size: 1rem;"><i class="fas fa-chart-pie" style="color:#f472b6;"></i> Incident Types</h3>
+                    <canvas id="typeChart" height="220"></canvas>
+                </div>
+                <div>
+                    <h3 style="margin-bottom: 1rem; font-size: 1rem;"><i class="fas fa-chart-line" style="color:#34d399;"></i> Daily Trends</h3>
+                    <canvas id="trendChart" height="220"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-bar">
+            <input type="date" name="date" value="{{ date_filter }}" class="filter-input" onchange="this.form.submit()">
+            <select name="type" class="filter-input" onchange="this.form.submit()">
+                <option value="">All Types</option>
+                {% for type in types %}
+                <option value="{{ type }}" {% if type_filter == type %}selected{% endif %}>{{ type | title }}</option>
+                {% endfor %}
+            </select>
+            <select name="status" class="filter-input" onchange="this.form.submit()">
+                <option value="">All Status</option>
+                <option value="pending" {% if status_filter == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="in-progress" {% if status_filter == 'in-progress' %}selected{% endif %}>In Progress</option>
+                <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Resolved</option>
+            </select>
+        </div>
+
+        <!-- Incident Table -->
+        <div class="card" style="padding: 0; overflow: hidden;">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Type</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Time</th>
+                        <th>Response</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for emergency in emergencies %}
+                    <tr>
+                        <td style="font-weight: 700; color: #94a3b8;">#{{ emergency.id }}</td>
+                        <td>{{ emergency.name }}</td>
+                        <td>
+                            <span class="type-dot" style="background:
+                                {% if emergency.emergency_type == 'fire' %}#ef4444
+                                {% elif emergency.emergency_type == 'medical' %}#f472b6
+                                {% elif emergency.emergency_type == 'flood' %}#38bdf8
+                                {% elif emergency.emergency_type == 'security' %}#a78bfa
+                                {% else %}#94a3b8{% endif %}"></span>
+                            {{ emergency.emergency_type | default('medical') | title }}
+                        </td>
+                        <td>{{ emergency.location }}</td>
+                        <td><span class="status-dot {{ emergency.status }}">{{ emergency.status | upper }}</span></td>
+                        <td style="color: #64748b; font-size: 0.85rem;">{{ emergency.timestamp }}</td>
+                        <td style="color: #64748b;">{{ emergency.response_time_seconds or '—' }}</td>
+                        <td>
+                            <a href="/track/{{ emergency.id }}" class="btn btn-primary" style="padding: 6px 14px; font-size: 0.8rem; border-radius: 8px;">Track</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% if not emergencies %}
+            <p style="text-align: center; color: #64748b; padding: 3rem;"><i class="fas fa-inbox" style="font-size: 2rem; margin-bottom: 0.5rem; display: block;"></i> No incidents found.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        fetch('/api/analytics')
+            .then(r => r.json())
+            .then(data => {
+                const pieColors = ['#ef4444', '#38bdf8', '#fbbf24', '#34d399', '#a78bfa', '#f472b6'];
+                const typeCtx = document.getElementById('typeChart').getContext('2d');
+                new Chart(typeCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: Object.keys(data.type_counts),
+                        datasets: [{
+                            data: Object.values(data.type_counts),
+                            backgroundColor: pieColors,
+                            borderWidth: 0
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { position: 'bottom', labels: { color: '#94a3b8', padding: 20 } }
+                        }
+                    }
+                });
+
+                const trendCtx = document.getElementById('trendChart').getContext('2d');
+                new Chart(trendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: data.daily_counts.map(d => d.date),
+                        datasets: [{
+                            label: 'Incidents',
+                            data: data.daily_counts.map(d => d.count),
+                            borderColor: '#38bdf8',
+                            backgroundColor: 'rgba(56,189,248,0.1)',
+                            fill: true,
+                            tension: 0.4,
+                            pointBackgroundColor: '#38bdf8',
+                            pointRadius: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: { legend: { display: false } },
+                        scales: {
+                            x: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                            y: { ticks: { color: '#64748b' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+                        }
+                    }
+                });
+            });
+    </script>
+</body>
+</html>
+

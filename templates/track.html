@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Track Emergency #{{ emergency.id }} - RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .track-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 2rem; }
+        .track-id { font-size: 1.5rem; color: #f1f5f9; }
+        .track-id span { color: #94a3b8; font-size: 0.9rem; }
+        .status-pill-big {
+            padding: 0.5rem 1.25rem;
+            border-radius: 50px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        .status-pill-big.pending { background: rgba(251,191,36,0.15); color: #fbbf24; }
+        .status-pill-big.in-progress { background: rgba(56,189,248,0.15); color: #38bdf8; }
+        .status-pill-big.resolved { background: rgba(52,211,153,0.15); color: #34d399; }
+        .info-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .info-cell { padding: 1rem; text-align: center; }
+        .info-cell h4 { font-size: 1.4rem; color: #e2e8f0; font-weight: 700; margin-bottom: 0.25rem; }
+        .info-cell p { font-size: 0.8rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; }
+        .timeline-wrap { margin-top: 1rem; position: relative; padding-left: 2rem; }
+        .timeline-wrap::before {
+            content: '';
+            position: absolute;
+            left: 8px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: rgba(255,255,255,0.06);
+        }
+        .tl-item { position: relative; margin-bottom: 1.5rem; }
+        .tl-dot {
+            position: absolute;
+            left: -2rem;
+            top: 0;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #0f172a;
+            border: 3px solid #38bdf8;
+        }
+        .tl-dot.active { border-color: #fbbf24; animation: tl-pulse 2s infinite; }
+        .tl-dot.done { border-color: #34d399; }
+        @keyframes tl-pulse {
+            0% { box-shadow: 0 0 0 0 rgba(251,191,36,0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(251,191,36,0); }
+            100% { box-shadow: 0 0 0 0 rgba(251,191,36,0); }
+        }
+        .tl-content { background: rgba(30,41,59,0.5); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px; padding: 1rem 1.25rem; }
+        .tl-content h4 { font-size: 0.95rem; color: #e2e8f0; margin-bottom: 0.25rem; }
+        .tl-time { font-size: 0.8rem; color: #64748b; margin-bottom: 0.5rem; }
+        .tl-note { font-size: 0.85rem; color: #94a3b8; font-style: italic; }
+        .action-panel { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.5rem; }
+        .act-btn {
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .act-btn:hover { transform: translateY(-2px); }
+        .act-ack { background: linear-gradient(135deg, #059669, #34d399); color: white; }
+        .act-prog { background: linear-gradient(135deg, #0ea5e9, #38bdf8); color: white; }
+        .act-res { background: linear-gradient(135deg, #dc2626, #ef4444); color: white; }
+        .note-input {
+            width: 100%;
+            padding: 12px;
+            background: rgba(15,23,42,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            color: #e2e8f0;
+            font-size: 0.9rem;
+            margin-top: 0.75rem;
+        }
+        .note-input:focus { outline: none; border-color: #38bdf8; }
+        @media (max-width: 768px) { .info-bar { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/dashboard" class="logo"><i class="fas fa-shield-alt"></i> RescuEase</a>
+            <div>
+                <a href="/incident-log" class="btn btn-secondary">Analytics</a>
+                <a href="/resources" class="btn btn-secondary">Resources</a>
+                <a href="/logout" class="btn btn-secondary">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container page-entrance" style="padding-top: 100px;">
+        <div class="track-header">
+            <div>
+                <h1 class="track-id">#{{ emergency.id }} <span>{{ emergency.name }}</span></h1>
+                <p style="color: #64748b; font-size: 0.9rem; margin-top: 0.25rem;">
+                    <i class="fas fa-map-marker-alt"></i> {{ emergency.location }} &bull; Room {{ emergency.room_number or 'N/A' }} &bull; Floor {{ emergency.floor_number or 1 }}
+                </p>
+            </div>
+            <span class="status-pill-big {{ emergency.status }}">{{ emergency.status | upper }}</span>
+        </div>
+
+        <div class="info-bar">
+            <div class="info-cell">
+                <h4>{{ emergency.emergency_type | default('medical') | title }}</h4>
+                <p>Type</p>
+            </div>
+            <div class="info-cell">
+                <h4>{{ emergency.escalation_level | default(1) }}</h4>
+                <p>Escalation</p>
+            </div>
+            <div class="info-cell">
+                <h4>{{ emergency.assigned_staff or 'Unassigned' }}</h4>
+                <p>Assigned</p>
+            </div>
+            <div class="info-cell">
+                <h4>{{ emergency.response_time_seconds or '&mdash;' }}s</h4>
+                <p>Response Time</p>
+            </div>
+
+        <h3 style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+            <i class="fas fa-stream"></i> Status Timeline
+        </h3>
+        <div class="card" style="padding: 1.5rem;">
+            <div class="timeline-wrap">
+                <div class="tl-item">
+                    <div class="tl-dot done"></div>
+                    <div class="tl-content">
+                        <h4>Reported</h4>
+                        <p class="tl-time"><i class="fas fa-clock"></i> {{ emergency.timestamp }}</p>
+                        <p class="tl-note">Emergency reported by {{ emergency.name }}</p>
+                    </div>
+                {% if emergency.acknowledged_at %}
+                <div class="tl-item">
+                    <div class="tl-dot done"></div>
+                    <div class="tl-content">
+                        <h4>Acknowledged</h4>
+                        <p class="tl-time"><i class="fas fa-clock"></i> {{ emergency.acknowledged_at }}</p>
+                        <p class="tl-note">Assigned to {{ emergency.assigned_staff or 'staff' }}</p>
+                    </div>
+                {% else %}
+                <div class="tl-item">
+                    <div class="tl-dot active"></div>
+                    <div class="tl-content">
+                        <h4>Waiting for Acknowledgment</h4>
+                        <p class="tl-time"><i class="fas fa-clock"></i> Pending...</p>
+                    </div>
+                {% endif %}
+                {% if emergency.resolved_at %}
+                <div class="tl-item">
+                    <div class="tl-dot done"></div>
+                    <div class="tl-content">
+                        <h4>Resolved</h4>
+                        <p class="tl-time"><i class="fas fa-clock"></i> {{ emergency.resolved_at }}</p>
+                        <p class="tl-note">Case closed successfully</p>
+                    </div>
+                {% endif %}
+            </div>
+
+        <div class="card" style="margin-top: 1.5rem;">
+            <h3 style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+                <i class="fas fa-cogs"></i> Update Status
+            </h3>
+            <input type="text" id="status-note" class="note-input" placeholder="Add a note (optional)...">
+            <div class="action-panel">
+                {% if not emergency.acknowledged_at %}
+                <button onclick="updateStatus('in-progress')" class="act-btn act-ack"><i class="fas fa-check"></i> Acknowledge</button>
+                {% endif %}
+                {% if emergency.status != 'in-progress' and emergency.status != 'resolved' %}
+                <button onclick="updateStatus('in-progress')" class="act-btn act-prog"><i class="fas fa-play"></i> In Progress</button>
+                {% endif %}
+                {% if emergency.status != 'resolved' %}
+                <button onclick="updateStatus('resolved')" class="act-btn act-res"><i class="fas fa-check-double"></i> Resolve</button>
+                {% endif %}
+            </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="{{ url_for('static', filename='js/socket.js') }}"></script>
+    <script>
+        function updateStatus(status) {
+            const note = document.getElementById('status-note').value;
+            fetch('/update_status/' + {{ emergency.id }}, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({status: status, note: note})
+            })
+            .then(r => r.json())
+            .then(data => {
+                const toast = document.createElement('div');
+                toast.className = 'toast-notification';
+                toast.innerHTML = '<i class="fas fa-check"></i> ' + data.message;
+                document.body.appendChild(toast);
+                setTimeout(function() { toast.remove(); location.reload(); }, 1200);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Approvals - RescuEase Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .approval-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 1.5rem; margin-top: 1.5rem; }
+        .approval-card { background: white; border-radius: 15px; padding: 1.5rem; box-shadow: 0 5px 20px rgba(0,0,0,0.1); transition: all 0.3s; }
+        .approval-card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+        .approval-card.pending { border-left: 4px solid #ffa502; }
+        .approval-card.approved { border-left: 4px solid #2ed573; }
+        .approval-card.rejected { border-left: 4px solid #ff6b6b; }
+        .approval-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .approval-status { padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .approval-status.pending { background: #fff3cd; color: #856404; }
+        .approval-status.approved { background: #d4edda; color: #155724; }
+        .approval-status.rejected { background: #f8d7da; color: #721c24; }
+        .approval-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+        .approval-actions button { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: 600; transition: all 0.3s; }
+        .btn-approve { background: #2ed573; color: white; }
+        .btn-approve:hover { background: #26b965; }
+        .btn-reject { background: #ff6b6b; color: white; }
+        .btn-reject:hover { background: #e55a5a; }
+        .stats-bar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem; }
+        .stat-item { background: white; padding: 1.5rem; border-radius: 15px; text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        .stat-item h3 { font-size: 2rem; color: #667eea; margin-bottom: 0.5rem; }
+        .stat-item p { color: #666; font-size: 0.9rem; }
+        @media (max-width: 768px) { .stats-bar { grid-template-columns: repeat(2, 1fr); } }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/dashboard" class="logo"><i class="fas fa-shield-alt"></i> RescuEase Admin</a>
+            <div>
+                <span style="color: white; margin-right: 1rem;"><i class="fas fa-user"></i> {{ session.user_name }}</span>
+                <a href="/dashboard" class="btn btn-secondary"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                <a href="/logout" class="btn btn-secondary">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container page-entrance" style="padding-top: 100px;">
+        <div class="card">
+            <h1><i class="fas fa-user-check" style="color: #667eea;"></i> Guest Access Approvals</h1>
+            <p style="color: #666;">Review and manage guest access requests. Approve or reject pending requests.</p>
+        </div>
+
+        <!-- Stats Bar -->
+        <div class="stats-bar">
+            <div class="stat-item">
+                <h3>{{ approvals|length }}</h3>
+                <p>Total Requests</p>
+            </div>
+            <div class="stat-item">
+                <h3 style="color: #ffa502;">{{ pending_approvals }}</h3>
+                <p>Pending</p>
+            </div>
+            <div class="stat-item">
+                <h3 style="color: #2ed573;">{{ approvals|selectattr('status', 'equalto', 'approved')|list|length }}</h3>
+                <p>Approved</p>
+            </div>
+            <div class="stat-item">
+                <h3 style="color: #ff6b6b;">{{ approvals|selectattr('status', 'equalto', 'rejected')|list|length }}</h3>
+                <p>Rejected</p>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div style="display: flex; gap: 1rem; margin-bottom: 1rem;">
+            <button onclick="filterApprovals('all')" class="btn btn-secondary" id="filter-all" style="background: #667eea; color: white;">All</button>
+            <button onclick="filterApprovals('pending')" class="btn btn-secondary" id="filter-pending">Pending</button>
+            <button onclick="filterApprovals('approved')" class="btn btn-secondary" id="filter-approved">Approved</button>
+            <button onclick="filterApprovals('rejected')" class="btn btn-secondary" id="filter-rejected">Rejected</button>
+        </div>
+
+        <!-- Approvals Grid -->
+        <div class="approval-grid" id="approvals-grid">
+            {% for approval in approvals %}
+            <div class="approval-card {{ approval.status }}" data-status="{{ approval.status }}">
+                <div class="approval-header">
+                    <h3><i class="fas fa-user"></i> {{ approval.name }}</h3>
+                    <span class="approval-status {{ approval.status }}">{{ approval.status }}</span>
+                </div>
+                <p><strong><i class="fas fa-user-tag"></i> Username:</strong> {{ approval.username }}</p>
+                <p><strong><i class="fas fa-envelope"></i> Email:</strong> {{ approval.email or 'N/A' }}</p>
+                <p><strong><i class="fas fa-phone"></i> Phone:</strong> {{ approval.phone or 'N/A' }}</p>
+                <p><strong><i class="fas fa-door-open"></i> Room:</strong> {{ approval.room_number or 'N/A' }}</p>
+                <p><strong><i class="fas fa-comment"></i> Reason:</strong> {{ approval.request_reason or 'N/A' }}</p>
+                <p><strong><i class="fas fa-clock"></i> Requested:</strong> {{ approval.requested_at }}</p>
+                {% if approval.approved_by %}
+                <p><strong><i class="fas fa-check-circle"></i> Approved By:</strong> {{ approval.approved_by }} at {{ approval.approved_at }}</p>
+                {% endif %}
+                
+                {% if approval.status == 'pending' %}
+                <div class="approval-actions">
+                    <button class="btn-approve" onclick="approveGuest({{ approval.id }})">
+                        <i class="fas fa-check"></i> Approve
+                    </button>
+                    <button class="btn-reject" onclick="rejectGuest({{ approval.id }})">
+                        <i class="fas fa-times"></i> Reject
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if not approvals %}
+        <div class="card" style="text-align: center; padding: 3rem;">
+            <i class="fas fa-inbox" style="font-size: 3rem; color: #ccc; margin-bottom: 1rem;"></i>
+            <h3>No requests yet</h3>
+            <p style="color: #666;">Guest access requests will appear here.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <script>
+        function filterApprovals(status) {
+            const cards = document.querySelectorAll('.approval-card');
+            const buttons = ['all', 'pending', 'approved', 'rejected'];
+            
+            buttons.forEach(btn => {
+                const el = document.getElementById('filter-' + btn);
+                if (btn === status) {
+                    el.style.background = '#667eea';
+                    el.style.color = 'white';
+                } else {
+                    el.style.background = 'rgba(255,255,255,0.2)';
+                    el.style.color = 'white';
+                }
+            });
+            
+            cards.forEach(card => {
+                if (status === 'all' || card.dataset.status === status) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        }
+
+        function approveGuest(guestId) {
+            fetch(`/api/approve-guest/${guestId}`, { method: 'POST' })
+                .then(r => r.json())
+                .then(data => {
+                    alert(data.message);
+                    location.reload();
+                });
+        }
+
+        function rejectGuest(guestId) {
+            if (confirm('Are you sure you want to reject this guest?')) {
+                fetch(`/api/reject-guest/${guestId}`, { method: 'POST' })
+                    .then(r => r.json())
+                    .then(data => {
+                        alert(data.message);
+                        location.reload();
+                    });
+            }
+        }
+    </script>
+</body>
+</html>

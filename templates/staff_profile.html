@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Profile | RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .profile-header { display: flex; align-items: center; gap: 1.5rem; margin-bottom: 2rem; }
+        .profile-avatar {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, #0ea5e9, #6366f1);
+            border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 2rem;
+        }
+        .profile-name h2 { font-size: 1.4rem; color: #f1f5f9; margin-bottom: 0.25rem; }
+        .profile-name p { color: #94a3b8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.05em; }
+        .profile-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; margin-bottom: 2rem; }
+        .profile-col h3 { font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; }
+        .profile-col p { color: #cbd5e1; margin-bottom: 0.75rem; font-size: 0.95rem; }
+        .profile-col p strong { color: #94a3b8; font-weight: 500; }
+        .emergency-list { margin-top: 1rem; }
+        .emg-row {
+            display: flex; align-items: center; gap: 1rem;
+            padding: 0.875rem 1.25rem;
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .emg-row:last-child { border-bottom: none; }
+        .emg-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .emg-dot.pending { background: #fbbf24; }
+        .emg-dot.in-progress { background: #38bdf8; }
+        .emg-dot.resolved { background: #34d399; }
+        .emg-info { flex: 1; }
+        .emg-info h4 { font-size: 0.9rem; color: #e2e8f0; }
+        .emg-meta { font-size: 0.8rem; color: #64748b; }
+        @media (max-width: 768px) { .profile-grid { grid-template-columns: 1fr; } .profile-header { flex-direction: column; text-align: center; } }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/dashboard" class="logo"><i class="fas fa-user-shield"></i> RescuEase</a>
+            <div>
+                <a href="/incident-log" class="btn btn-secondary">Analytics</a>
+                <a href="/logout" class="btn btn-secondary">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container page-entrance" style="padding-top: 100px;">
+        <!-- Profile Header -->
+        <div class="profile-header">
+            <div class="profile-avatar"><i class="fas fa-user"></i></div>
+            <div class="profile-name">
+                <h2>{{ staff.name }}</h2>
+                <p>{{ staff.role | title }} • Level {{ staff.escalation_level }}</p>
+            </div>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="profile-grid">
+            <div class="profile-col">
+                <h3><i class="fas fa-id-card"></i> Details</h3>
+                <p><strong>Username:</strong> {{ staff.username }}</p>
+                <p><strong>Phone:</strong> {{ staff.phone or 'Not set' }}</p>
+                <p><strong>Email:</strong> {{ staff.email or 'Not set' }}</p>
+            </div>
+            <div class="profile-col">
+                <h3><i class="fas fa-chart-line"></i> Stats</h3>
+                <p><strong>Assigned:</strong> {{ assigned_emergencies | length }}</p>
+                <p><strong>Resolved:</strong> {{ assigned_emergencies | selectattr('status', 'equalto', 'resolved') | list | length }}</p>
+                <p><strong>In Progress:</strong> {{ assigned_emergencies | selectattr('status', 'equalto', 'in-progress') | list | length }}</p>
+            </div>
+        </div>
+
+        <!-- Assigned Emergencies -->
+        <h3 style="font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem;">
+            <i class="fas fa-tasks"></i> Assigned Emergencies
+        </h3>
+        <div class="card" style="padding: 0; overflow: hidden;">
+            {% if assigned_emergencies %}
+            <div class="emergency-list">
+                {% for emergency in assigned_emergencies %}
+                <div class="emg-row">
+                    <div class="emg-dot {{ emergency.status }}"></div>
+                    <div class="emg-info">
+                        <h4>#{{ emergency.id }} — {{ emergency.name }}</h4>
+                        <p class="emg-meta">{{ emergency.emergency_type | default('medical') | title }} • {{ emergency.location }}</p>
+                    </div>
+                    <a href="/track/{{ emergency.id }}" class="btn btn-primary" style="padding: 5px 14px; font-size: 0.8rem; border-radius: 8px;">Track</a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p style="text-align: center; color: #64748b; padding: 3rem;">No assigned emergencies.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

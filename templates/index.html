@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#764ba2">
+    <title>RescuEase AI - Crisis Management Suite</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+</head>
+<body>
+    <header>
+        <nav class="container">
+            <a href="/" class="logo"><i class="fas fa-shield-alt"></i> RescuEase Crisis Suite</a>
+            <div style="display: flex; gap: 10px;">
+                <a href="/contacts" class="btn btn-secondary"><i class="fas fa-phone"></i> Emergency</a>
+                <a href="/dashboard" class="btn btn-secondary"><i class="fas fa-user-shield"></i> Staff</a>
+            </div>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1><i class="fas fa-heartbeat"></i> Crisis Management Suite</h1>
+            <p>AI-powered emergency response system with real-time tracking, evacuation routing, and multi-channel alerts.</p>
+            
+            <div style="margin: 2rem 0;">
+                <input type="text" id="user-name" class="location-input" placeholder="Your name (optional)" maxlength="50">
+                <input type="text" id="location" class="location-input" placeholder="Location will be auto-detected">
+                <input type="text" id="room-number" class="location-input" placeholder="Room number (e.g., 101)">
+                <select id="emergency-type" class="location-input" style="color: #333;">
+                    <option value="medical">Medical Emergency</option>
+                    <option value="fire">Fire / Smoke</option>
+                    <option value="security">Security Threat</option>
+                    <option value="flood">Flood / Water</option>
+                    <option value="earthquake">Earthquake</option>
+                    <option value="other">Other</option>
+                </select>
+                <button id="panic-btn" class="panic-btn">
+                    <i class="fas fa-exclamation-triangle"></i><br>EMERGENCY SOS
+                </button>
+            </div>
+            
+            <p style="font-size: 1.1rem; opacity: 0.9;">
+                <i class="fas fa-wifi"></i> <span id="connection-status">Online</span> | 
+                <i class="fas fa-shield-alt"></i> End-to-End Encrypted
+            </p>
+            
+            <!-- Feature Cards -->
+            <div class="dashboard-grid" style="margin-top: 3rem;">
+                <div class="card" style="background: rgba(255,255,255,0.95);">
+                    <h3><i class="fas fa-robot"></i> AI Detection</h3>
+                    <p>Automatic threat detection via cameras and sensors.</p>
+                </div>
+                <div class="card" style="background: rgba(255,255,255,0.95);">
+                    <h3><i class="fas fa-route"></i> Smart Evacuation</h3>
+                    <p>Real-time route to nearest emergency exit.</p>
+                </div>
+                <div class="card" style="background: rgba(255,255,255,0.95);">
+                    <h3><i class="fas fa-bell"></i> Multi-Channel Alerts</h3>
+                    <p>SMS, WhatsApp, Email, and Dashboard alerts.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div class="offline-indicator" id="offline-indicator">
+        <i class="fas fa-wifi-slash"></i> Offline Mode - Requests Queued
+    </div>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/js/sw.js')
+                .then(reg => console.log('SW registered'))
+                .catch(err => console.log('SW error:', err));
+        }
+
+        // Online/Offline detection
+        window.addEventListener('online', () => {
+            document.getElementById('connection-status').textContent = 'Online';
+            document.getElementById('offline-indicator').classList.remove('visible');
+            // Sync offline queue
+            if ('serviceWorker' in navigator && 'SyncManager' in window) {
+                navigator.serviceWorker.ready.then(reg => reg.sync.register('sync-emergencies'));
+            }
+        });
+
+        window.addEventListener('offline', () => {
+            document.getElementById('connection-status').textContent = 'Offline - Queue Active';
+            document.getElementById('offline-indicator').classList.add('visible');
+        });
+    </script>
+</body>
+</html>

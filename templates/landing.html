@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#0f172a">
+    <title>RescuEase Crisis Management Suite</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <style>
+        .landing-hero { min-height: 100vh; display: flex; flex-direction: column; background: #0f172a; position: relative; overflow: hidden; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(60px); opacity: 0.3; animation: orb-float 12s ease-in-out infinite; }
+        .orb-1 { width: 300px; height: 300px; background: #0ea5e9; top: 5%; left: 5%; }
+        .orb-2 { width: 250px; height: 250px; background: #6366f1; top: 50%; right: 5%; animation-delay: -4s; }
+        .orb-3 { width: 200px; height: 200px; background: #ec4899; bottom: 5%; left: 35%; animation-delay: -8s; }
+        @keyframes orb-float { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-40px) scale(1.1); } 66% { transform: translate(-20px,20px) scale(0.9); } }
+
+        .hero-top { display: grid; grid-template-columns: 1fr 1fr; gap: 3rem; align-items: center; padding: 120px 40px 60px; max-width: 1400px; margin: 0 auto; width: 100%; }
+        .hero-text { z-index: 1; }
+        .hero-text h1 { font-size: 3.2rem; font-weight: 800; color: white; margin-bottom: 1rem; line-height: 1.1; }
+        .hero-text h1 span { background: linear-gradient(135deg, #0ea5e9, #6366f1); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero-text p { color: #94a3b8; font-size: 1.15rem; margin-bottom: 2.5rem; max-width: 500px; }
+        .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
+        .cta-btn { padding: 14px 28px; border-radius: 12px; font-weight: 600; text-decoration: none; transition: all 0.3s; display: inline-flex; align-items: center; gap: 0.5rem; }
+        .cta-primary { background: linear-gradient(135deg, #0ea5e9, #6366f1); color: white; }
+        .cta-primary:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(99,102,241,0.3); }
+        .cta-secondary { background: rgba(255,255,255,0.08); color: white; border: 1px solid rgba(255,255,255,0.15); }
+        .cta-secondary:hover { background: rgba(255,255,255,0.15); }
+
+        .hero-image { z-index: 1; position: relative; }
+        .hero-image img { width: 100%; border-radius: 20px; box-shadow: 0 25px 60px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); }
+        .hero-badge {
+            position: absolute; bottom: -20px; left: -20px;
+            background: rgba(30,41,59,0.9); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+            padding: 1rem 1.5rem; display: flex; align-items: center; gap: 0.75rem;
+        }
+        .hero-badge i { font-size: 1.5rem; color: #34d399; }
+        .hero-badge div { color: white; font-weight: 700; font-size: 1rem; }
+        .hero-badge div span { display: block; font-size: 0.75rem; color: #94a3b8; font-weight: 400; }
+
+        /* Swipe cards section */
+        .swipe-section { padding: 80px 40px; position: relative; z-index: 1; }
+        .swipe-section h2 { text-align: center; font-size: 2rem; color: white; margin-bottom: 3rem; }
+        .swipe-container { display: flex; gap: 1.5rem; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 1rem; -webkit-overflow-scrolling: touch; }
+        .swipe-container::-webkit-scrollbar { height: 6px; }
+        .swipe-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        .swipe-card {
+            flex: 0 0 320px; scroll-snap-align: start;
+            background: rgba(30,41,59,0.6); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 20px;
+            overflow: hidden; transition: all 0.3s;
+        }
+        .swipe-card:hover { transform: translateY(-5px); border-color: rgba(255,255,255,0.2); }
+        .swipe-card img { width: 100%; height: 180px; object-fit: cover; }
+        .swipe-body { padding: 1.25rem; }
+        .swipe-body h3 { color: white; font-size: 1.1rem; margin-bottom: 0.5rem; }
+        .swipe-body p { color: #94a3b8; font-size: 0.9rem; }
+
+        /* Role cards */
+        .role-section { padding: 60px 40px; display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; max-width: 1200px; margin: 0 auto; }
+        .role-card {
+            background: rgba(30,41,59,0.5); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.08); border-radius: 20px;
+            padding: 2rem; width: 300px; text-align: center;
+            text-decoration: none; color: white; transition: all 0.4s;
+        }
+        .role-card:hover { transform: translateY(-8px); background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.2); box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        .role-icon { font-size: 2.5rem; margin-bottom: 1rem; display: block; }
+        .role-card.staff .role-icon { color: #38bdf8; }
+        .role-card.guest .role-icon { color: #f472b6; }
+        .role-card.sos .role-icon { color: #fb923c; }
+        .role-card h3 { font-size: 1.3rem; margin-bottom: 0.5rem; }
+        .role-card p { font-size: 0.9rem; opacity: 0.6; margin-bottom: 1.5rem; }
+
+        @media (max-width: 900px) { .hero-top { grid-template-columns: 1fr; padding: 100px 20px 40px; text-align: center; } .hero-text p { margin: 0 auto 2rem; } .hero-cta { justify-content: center; } .hero-image { display: none; } .swipe-section { padding: 60px 20px; } }
+    </style>
+</head>
+<body class="dark-page landing-hero">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+
+    <div class="hero-top">
+        <div class="hero-text">
+            <h1>Hotel Safety <span>Reimagined</span></h1>
+            <p>AI-powered emergency response system for modern hospitality. Real-time tracking, smart evacuation, and multi-channel alerts keep your guests and staff safe 24/7.</p>
+            <div class="hero-cta">
+                <a href="/login" class="cta-btn cta-primary"><i class="fas fa-sign-in-alt"></i> Staff Login</a>
+                <a href="/guest/login" class="cta-btn cta-secondary"><i class="fas fa-user"></i> Guest Portal</a>
+            </div>
+        </div>
+        <div class="hero-image">
+            <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=700&h=500&fit=crop" alt="Modern Hotel Lobby">
+            <div class="hero-badge">
+                <i class="fas fa-shield-alt"></i>
+                <div>99.9% Uptime<span>Crisis Response System</span></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="swipe-section">
+        <h2><i class="fas fa-images" style="color:#0ea5e9;"></i> Safety Features</h2>
+        <div class="swipe-container">
+            <div class="swipe-card">
+                <img src="https://images.unsplash.com/photo-1582719508461-905c673771fd?w=400&h=250&fit=crop" alt="Hotel Room Safety">
+                <div class="swipe-body">
+                    <h3>Room-Level Monitoring</h3>
+                    <p>Every room is connected to our crisis suite for instant emergency detection and response.</p>
+                </div>
+            </div>
+            <div class="swipe-card">
+                <img src="https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=400&h=250&fit=crop" alt="Evacuation Route">
+                <div class="swipe-body">
+                    <h3>Smart Evacuation</h3>
+                    <p>AI-calculated nearest exits and real-time route guidance for every room in the hotel.</p>
+                </div>
+            </div>
+            <div class="swipe-card">
+                <img src="https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?w=400&h=250&fit=crop" alt="First Aid">
+                <div class="swipe-body">
+                    <h3>Emergency Resources</h3>
+                    <p>Track first-aid kits, fire extinguishers, and AED devices across all floors in real-time.</p>
+                </div>
+            </div>
+            <div class="swipe-card">
+                <img src="https://images.unsplash.com/photo-1556761175-5973dc0f32e7?w=400&h=250&fit=crop" alt="Team Response">
+                <div class="swipe-body">
+                    <h3>Multi-Channel Alerts</h3>
+                    <p>Instant notifications via SMS, email, WhatsApp, and in-app alerts to response teams.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="role-section">
+        <a href="/login" class="role-card staff">
+            <i class="fas fa-user-shield role-icon"></i>
+            <h3>Staff / Admin</h3>
+            <p>Access dashboard, manage emergencies, review analytics.</p>
+            <div class="cta-btn cta-primary" style="width:100%; justify-content:center;">Staff Login</div>
+        </a>
+        <a href="/guest/login" class="role-card guest">
+            <i class="fas fa-user role-icon"></i>
+            <h3>Guest Portal</h3>
+            <p>Request access to report emergencies and view routes.</p>
+            <div class="cta-btn cta-primary" style="width:100%; justify-content:center; background:linear-gradient(135deg,#ec4899,#f472b6);">Guest Access</div>
+        </a>
+        <a href="/sos" class="role-card sos">
+            <i class="fas fa-exclamation-triangle role-icon"></i>
+            <h3>Emergency SOS</h3>
+            <p>Immediate panic button. No login required.</p>
+            <div class="cta-btn cta-primary" style="width:100%; justify-content:center; background:linear-gradient(135deg,#f59e0b,#fb923c);">SOS Alert</div>
+        </a>
+    </div>
+</body>
+</html>
+

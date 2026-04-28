@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guest Access - RescuEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .guest-page {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(ellipse at top, #1e293b 0%, #0f172a 50%, #020617 100%);
+            padding: 20px;
+        }
+        .guest-glass {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(24px);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 440px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+        }
+        .guest-glass h2 { font-size: 1.4rem; color: #f1f5f9; margin-bottom: 0.5rem; text-align: center; }
+        .guest-glass p { color: #94a3b8; font-size: 0.9rem; text-align: center; margin-bottom: 1.5rem; }
+        .guest-input {
+            width: 100%;
+            padding: 13px 16px;
+            background: rgba(15,23,42,0.5);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 0.95rem;
+            margin-bottom: 0.75rem;
+        }
+        .guest-input:focus { outline: none; border-color: #f472b6; box-shadow: 0 0 0 3px rgba(244,114,182,0.15); }
+        .guest-input::placeholder { color: #64748b; }
+        .guest-btn {
+            width: 100%;
+            padding: 13px;
+            background: linear-gradient(135deg, #ec4899, #f472b6);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 0.5rem;
+        }
+        .guest-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 30px rgba(236,72,153,0.3); }
+        .guest-link { text-align: center; margin-top: 1.25rem; color: #94a3b8; font-size: 0.85rem; }
+        .guest-link a { color: #f472b6; text-decoration: none; }
+        .success-msg {
+            background: rgba(52,211,153,0.15);
+            border: 1px solid rgba(52,211,153,0.3);
+            color: #34d399;
+            padding: 0.75rem;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+    </style>
+</head>
+<body class="guest-page">
+    <div class="guest-glass">
+        <h2><i class="fas fa-user" style="color:#f472b6; margin-bottom:0.5rem; display:block; font-size:2.5rem;"></i> Guest Portal</h2>
+        <p>Enter your credentials to access the dashboard.</p>
+
+        {% if request_sent %}
+        <div class="success-msg"><i class="fas fa-check-circle"></i> Request sent. An admin will review your access.</div>
+        {% endif %}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div style="background:rgba(239,68,68,0.15); border:1px solid rgba(239,68,68,0.3); color:#fca5a5; padding:0.75rem; border-radius:10px; font-size:0.9rem; margin-bottom:1rem; text-align:center;">
+                <i class="fas fa-exclamation-circle"></i> {{ messages[0] }}
+            </div>
+            {% endif %}
+        {% endwith %}
+
+        <form method="POST" action="/guest/login">
+            <input type="text" name="username" class="guest-input" placeholder="Username" required>
+            <input type="password" name="password" class="guest-input" placeholder="Password" required>
+            <button type="submit" class="guest-btn"><i class="fas fa-sign-in-alt"></i> Login</button>
+        </form>
+
+        <p class="guest-link">Need access? <a href="/guest/register"><i class="fas fa-user-plus"></i> Request Access</a></p>
+        <p class="guest-link" style="margin-top:0.5rem;"><a href="/"><i class="fas fa-arrow-left"></i> Back to Home</a></p>
+    </div>
+</body>
+</html>
